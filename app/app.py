@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 # =========================
 # PAGE CONFIG
 # =========================
+st.title("TEST MODIF TOTO 999")
 st.set_page_config(
     page_title="Pediatric BMT Success Predictor",
     page_icon="🩺",
