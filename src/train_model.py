@@ -103,7 +103,7 @@ def cast_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     for col in CATEGORICAL_FEATURES:
         if col in df.columns:
-            df[col] = df[col].astype("string")
+            df[col] = df[col].astype("object")
 
     if TARGET in df.columns:
         df[TARGET] = pd.to_numeric(df[TARGET], errors="coerce")
