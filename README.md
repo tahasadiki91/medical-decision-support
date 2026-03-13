@@ -32,8 +32,9 @@ After removing target leakage to ensure an honest predictive model, XGBoost slig
     F1-Score: 0.727 (Both)
 
     Precision: 0.750 (Both)
+   (ROC-AUC est un outil pour juger la qualité d’un modèle de classification. C’est très utilisé en machine learning, surtout en médecine, finance, détection de fraude… partout où un modèle doit décider entre deux classes : par exemple malade / pas malade.)
 
-3. Which medical features most influenced predictions (SHAP results)?
+4. Which medical features most influenced predictions (SHAP results)?
 After removing target leakage (survival_time), the SHAP explainability analysis revealed that the top three pre-transplant features influencing the model's predictions are:
 
     Relapse: The patient's relapse history.
@@ -42,7 +43,7 @@ After removing target leakage (survival_time), the SHAP explainability analysis 
 
     CD34kgx10d6: The CD34+ cell dose.
 
-4. What insights did prompt engineering provide for your selected task?
+5. What insights did prompt engineering provide for your selected task?
 Prompt engineering was critical for debugging complex library versioning issues and handling data formatting. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw .arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
 DATA ANALYSIS :
 Feature Analysis and Selection for Survival Prediction
