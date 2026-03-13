@@ -1,95 +1,225 @@
+import os
+import joblib
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+
+from scipy.io import arff
+
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from xgboost import XGBClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
-def train_and_evaluate(df):
-    """
-    Splits the data, trains 3 models with class imbalance handling, and returns evaluation metrics.
-    """
-    print("Preparing data for training...")
-    
-    # --- THE FIX: Convert all text columns into numbers (One-Hot Encoding) ---
-    df_encoded = pd.get_dummies(df, drop_first=True)
 
-    # 1. Separate Features (X) and Target (y)
-    X = df_encoded.drop('survival_status', axis=1)
-    y = df_encoded['survival_status']
+# =========================
+# PATHS
+# =========================
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(BASE_DIR, "data", "bone-marrow.arff")
+MODELS_DIR = os.path.join(BASE_DIR, "models")
+MODEL_PATH = os.path.join(MODELS_DIR, "rf_model.pkl")
+COLUMNS_PATH = os.path.join(MODELS_DIR, "model_columns.pkl")
 
-    # 2. Split data into Training (80%) and Testing (20%) sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    # Calculate exact imbalance ratio for XGBoost
-    ratio = float(y_train.value_counts()[0]) / y_train.value_counts()[1]
+# =========================
+# FEATURE CONFIGURATION
+# =========================
+# We keep only pre-transplant and transplant-time variables.
+FEATURES = [
+    "Recipientgender",
+    "Stemcellsource",
+    "Donorage",
+    "Gendermatch",
+    "DonorABO",
+    "RecipientABO",
+    "RecipientRh",
+    "CMVstatus",
+    "DonorCMV",
+    "RecipientCMV",
+    "Disease",
+    "Riskgroup",
+    "Diseasegroup",
+    "HLAmatch",
+    "HLAgrI",
+    "Recipientage",
+    "CD34kgx10d6",
+    "Rbodymass",
+]
 
-    # 3. Initialize the 3 required models
-    models = {
-        "Random Forest": RandomForestClassifier(class_weight='balanced', random_state=42),
-        "SVM": SVC(class_weight='balanced', probability=True, random_state=42),
-        "XGBoost": XGBClassifier(scale_pos_weight=ratio, random_state=42, eval_metric='logloss')
-    }
+TARGET = "survival_status"
 
-    # 4. Train and test each model
-    results = {}
-    for name, model in models.items():
-        # Train the AI
-        model.fit(X_train, y_train)
-        
-        # Make predictions on the unseen test data
-        y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1] # Get probabilities for ROC-AUC
+NUMERIC_FEATURES = [
+    "Donorage",
+    "Recipientage",
+    "CD34kgx10d6",
+    "Rbodymass",
+]
 
-        # Grade the AI
-        results[name] = {
-            "Accuracy": accuracy_score(y_test, y_pred),
-            "Precision": precision_score(y_test, y_pred),
-            "Recall": recall_score(y_test, y_pred),
-            "F1-Score": f1_score(y_test, y_pred),
-            "ROC-AUC": roc_auc_score(y_test, y_proba)
-        }
-        
-    # Format the grades into a clean Pandas table
-    results_df = pd.DataFrame(results).T
-    print("\n--- Model Evaluation Results ---")
-    print(results_df.round(3))
-    
-    return models, results_df
+CATEGORICAL_FEATURES = [
+    "Recipientgender",
+    "Stemcellsource",
+    "Gendermatch",
+    "DonorABO",
+    "RecipientABO",
+    "RecipientRh",
+    "CMVstatus",
+    "DonorCMV",
+    "RecipientCMV",
+    "Disease",
+    "Riskgroup",
+    "Diseasegroup",
+    "HLAmatch",
+    "HLAgrI",
+]
 
-# --- IGNITION SWITCH FOR TERMINAL EXECUTION ---
+
+# =========================
+# DATA LOADING
+# =========================
+def load_arff_dataset(path: str) -> pd.DataFrame:
+    """Load ARFF dataset into a pandas DataFrame and decode byte strings."""
+    data, _ = arff.loadarff(path)
+    df = pd.DataFrame(data)
+
+    for col in df.columns:
+        df[col] = df[col].apply(
+            lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
+        )
+
+    # Standard missing markers
+    df.replace(["?", "None", "none", "nan", "NaN", ""], np.nan, inplace=True)
+
+    return df
+
+
+# =========================
+# DATA CLEANING
+# =========================
+def cast_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Cast feature columns to appropriate numeric/object dtypes."""
+    df = df.copy()
+
+    for col in NUMERIC_FEATURES:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # IMPORTANT:
+    # use object, not pandas string dtype, to avoid sklearn/pandas NA issues
+    for col in CATEGORICAL_FEATURES:
+        if col in df.columns:
+            df[col] = df[col].astype("object")
+
+    if TARGET in df.columns:
+        df[TARGET] = pd.to_numeric(df[TARGET], errors="coerce")
+
+    return df
+
+
+# =========================
+# PIPELINE
+# =========================
+def build_pipeline() -> Pipeline:
+    numeric_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="median"))
+        ]
+    )
+
+    categorical_transformer = Pipeline(
+        steps=[
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore"))
+        ]
+    )
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", numeric_transformer, NUMERIC_FEATURES),
+            ("cat", categorical_transformer, CATEGORICAL_FEATURES),
+        ]
+    )
+
+    model = Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            (
+                "classifier",
+                RandomForestClassifier(
+                    n_estimators=300,
+                    max_depth=None,
+                    min_samples_split=4,
+                    min_samples_leaf=2,
+                    class_weight="balanced",
+                    random_state=42,
+                    n_jobs=-1,
+                ),
+            ),
+        ]
+    )
+
+    return model
+
+
+# =========================
+# TRAINING
+# =========================
+def main() -> None:
+    print("Loading dataset...")
+    df = load_arff_dataset(DATA_PATH)
+    df = cast_columns(df)
+
+    required_columns = FEATURES + [TARGET]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"Missing required columns in dataset: {missing_columns}")
+
+    df = df[required_columns].copy()
+    df = df.dropna(subset=[TARGET])
+
+    X = df[FEATURES]
+    y = df[TARGET].astype(int)
+
+    print("Dataset shape:", df.shape)
+    print("Target distribution:")
+    print(y.value_counts(dropna=False))
+    print()
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
+
+    print("Training model...")
+    model = build_pipeline()
+    model.fit(X_train, y_train)
+
+    print("Evaluating model...")
+    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:, 1]
+
+    acc = accuracy_score(y_test, y_pred)
+    roc = roc_auc_score(y_test, y_prob)
+
+    print(f"Accuracy: {acc:.4f}")
+    print(f"ROC-AUC:  {roc:.4f}")
+    print("\nClassification report:")
+    print(classification_report(y_test, y_pred))
+
+    os.makedirs(MODELS_DIR, exist_ok=True)
+
+    print("\nSaving artifacts...")
+    joblib.dump(model, MODEL_PATH)
+    joblib.dump(FEATURES, COLUMNS_PATH)
+
+    print(f"Saved model to: {MODEL_PATH}")
+    print(f"Saved feature list to: {COLUMNS_PATH}")
+
+
 if __name__ == "__main__":
-    import os
-    import pandas as pd
-    from scipy.io import arff
-    
-    data_path = "data/bone-marrow.arff"
-    
-    if os.path.exists(data_path):
-        print(f"Loading ARFF data from {data_path}...")
-        data, meta = arff.loadarff(data_path)
-        df = pd.DataFrame(data)
-        
-        # Decode ARFF byte strings
-        for col in df.select_dtypes([object]).columns:
-            df[col] = df[col].str.decode('utf-8')
-            
-        # --- NEW: Clean Missing Values (NaNs) ---
-        # Fills missing numbers with the median, and missing text with the most frequent value
-        for col in df.columns:
-            if df[col].dtype in ['float64', 'int64', 'float32', 'int32']:
-                df[col] = df[col].fillna(df[col].median())
-            else:
-                df[col] = df[col].fillna(df[col].mode()[0])
-                
-        # Run One-Hot Encoding
-        df_encoded = pd.get_dummies(df, drop_first=True, dtype=int)
-        
-        # Drop target leakage
-        if 'survival_time' in df_encoded.columns:
-            df_encoded = df_encoded.drop('survival_time', axis=1)
-            
-        # Train the models!
-        train_and_evaluate(df_encoded)
-    else:
-        print(f"Error: Could not find dataset at {data_path}. Please check the path.")
+    main()
