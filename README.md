@@ -21,41 +21,44 @@ This project is fully reproducible. To run the application locally, follow these
 The initial analysis revealed that the pediatric bone marrow transplant dataset was moderately imbalanced, with approximately 60% of cases representing survival and 40% representing non-survival. To correct this bias without altering the integrity of the original clinical data, a class-weight adjustment strategy was prioritized during model training. This mathematical approach allowed for heavier penalization of prediction errors on the minority class, thereby eliminating the need to rely on methods that generate synthetic data, such as oversampling (SMOTE) , or that discard valuable information, such as undersampling. The impact was highly positive: the algorithm was able to effectively prioritize the detection of minority cases while learning from the entirety of the real dataset. This resulted in an excellent balance between precision and recall, an absolute requirement for the reliability of this medical decision-support application.
 
 2. Which ML model performed best? Provide performance metrics.
-After cleaning the data to remove any target leakage and ensuring our model is honest, XGBoost provided the best results.
+  After cleaning the data to remove any target leakage and ensuring our model is honest, XGBoost provided the best results.
 
-Here are our performance metrics:
+  Here are our performance metrics:
+ 
+  ROC-AUC: 0.745 for XGBoost (compared to 0.732 for Random Forest)
 
-ROC-AUC: 0.745 for XGBoost (compared to 0.732 for Random Forest)
+  Accuracy: 76.3% (for both)
+ 
+  F1-Score: 0.727 (for both)
 
-Accuracy: 76.3% (for both)
+  Precision: 0.750 (for both)
 
-F1-Score: 0.727 (for both)
+ Difference between Random Forest and XGBoost:
+  Both models use "decision trees", but their learning methods are different:
 
-Precision: 0.750 (for both)
+  Random Forest: It builds many trees at the same time, completely independently. To make a prediction, all the trees "vote"   and the majority wins. It is very robust, but the trees do not learn from each other.
 
-Difference between Random Forest and XGBoost:
-Both models use "decision trees", but their learning methods are different:
+  XGBoost: 
+  It builds trees one after the other. Each new tree is created specifically to correct the mistakes of the previous one.      Since it learns from its errors step by step, it can often understand complex relationships in medical data better, which    explains why it performed slightly better here.
 
-Random Forest: It builds many trees at the same time, completely independently. To make a prediction, all the trees "vote" and the majority wins. It is very robust, but the trees do not learn from each other.
-
-XGBoost: It builds trees one after the other. Each new tree is created specifically to correct the mistakes of the previous one. Since it learns from its errors step by step, it can often understand complex relationships in medical data better, which explains why it performed slightly better here.
-
-Why use ROC-AUC?
-Even though both models have the same overall accuracy of 76.3%, we chose XGBoost because of its higher ROC-AUC score. Accuracy simply calculates the percentage of correct answers at a fixed threshold (for example, 50% probability). ROC-AUC, on the other hand, evaluates the model's overall ability to separate the two groups (patients who survive and those who do not), regardless of the chosen threshold. In medicine, this is a much more important metric because it proves that the model can fundamentally distinguish between a high-risk profile and a safe one.
+ Why use ROC-AUC?
+    Even though both models have the same overall accuracy of 76.3%, we chose XGBoost because of its higher ROC-AUC score.       Accuracy simply calculates the percentage of correct answers at a fixed threshold (for example, 50% probability). ROC-       AUC, on the other hand, evaluates the model's overall ability to separate the two groups (patients who survive and those     who do not), regardless of the chosen threshold. In medicine, this is a much more important metric because it proves         that the model can fundamentally distinguish between a high-risk profile and a safe one.
 
 3. Which medical features most influenced predictions (SHAP results)?
-After removing target leakage (specifically the survival_time variable) to ensure an honest predictive model, the SHAP explainability analysis revealed that the top three pre-transplant features influencing the model's predictions are:
+  After removing target leakage (specifically the survival_time variable) to ensure an honest predictive model, the SHAP       explainability analysis revealed that the top three pre-transplant features influencing the model's predictions are:
 
-Relapse: The patient's relapse history.
+   Relapse: The patient's relapse history.
+ 
+   PLTrecovery: The platelet recovery time.
 
-PLTrecovery: The platelet recovery time.
+   CD34kgx10d6: The CD34+ cell dose.
 
-CD34kgx10d6: The CD34+ cell dose.
-
-These results confirm that the model relies on highly relevant clinical factors to evaluate the probability of a successful pediatric bone marrow transplant.
+   These results confirm that the model relies on highly relevant clinical factors to evaluate the probability of a              successful  pediatric bone marrow transplant.
 
 4. What insights did prompt engineering provide for your selected task?
-Prompt engineering was critical for debugging complex library versioning issues and handling data formatting. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw .arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
+  Prompt engineering was critical for debugging complex library versioning issues and handling data formatting. For example,    I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent              update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the            raw.arff   dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
+
+
 DATA ANALYSIS :
 Feature Analysis and Selection for Survival Prediction
 
