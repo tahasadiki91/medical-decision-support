@@ -28,5 +28,10 @@ jobs:
       - name: Train model
         run: python src/train_model.py
 
-      - name: Run tests
+      - name: Verify model artifacts
+        run: |
+          test -f models/rf_model.pkl
+          test -f models/model_columns.pkl
+
+      - name: Test with pytest
         run: pytest tests/ -v
