@@ -1,12 +1,8 @@
 from pathlib import Path
 import sys
-
-# Force project root into Python path BEFORE any local imports
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
-
 import os
 import base64
+
 import streamlit as st
 import joblib
 import pandas as pd
@@ -15,23 +11,20 @@ import shap
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-from src.auth import ensure_db, create_user, authenticate_user
-from src.explanations import generate_role_based_explanation
-
-import base64
-import streamlit as st
-import joblib
-import pandas as pd
-import numpy as np
-import shap
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
+# =========================================================
+# FORCE PROJECT ROOT INTO PYTHON PATH
+# =========================================================
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.auth import ensure_db, create_user, authenticate_user
 from src.explanations import generate_role_based_explanation
-# =========================
+
+
+# =========================================================
 # PAGE CONFIG
-# =========================
+# =========================================================
 st.set_page_config(
     page_title="Pediatric BMT Survival Predictor",
     page_icon="🩺",
@@ -40,19 +33,19 @@ st.set_page_config(
 )
 
 
-# =========================
+# =========================================================
 # PATHS
-# =========================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "models", "rf_model.pkl")
-COLUMNS_PATH = os.path.join(BASE_DIR, "models", "model_columns.pkl")
-INFO_PATH = os.path.join(BASE_DIR, "models", "model_info.pkl")
-CSS_PATH = os.path.join(BASE_DIR, "app", "styles", "main.css")
+# =========================================================
+BASE_DIR = PROJECT_ROOT
+MODEL_PATH = BASE_DIR / "models" / "rf_model.pkl"
+COLUMNS_PATH = BASE_DIR / "models" / "model_columns.pkl"
+INFO_PATH = BASE_DIR / "models" / "model_info.pkl"
+CSS_PATH = BASE_DIR / "app" / "styles" / "main.css"
 
 
-# =========================
+# =========================================================
 # SESSION STATE
-# =========================
+# =========================================================
 if "user" not in st.session_state:
     st.session_state.user = None
 
@@ -60,100 +53,107 @@ if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
 
 
-# =========================
+# =========================================================
 # INIT DB
-# =========================
+# =========================================================
 ensure_db()
 
 
-# =========================
+# =========================================================
 # LOAD MODEL
-# =========================
+# =========================================================
 @st.cache_resource
 def load_artifacts():
+    missing_files = [str(p) for p in [MODEL_PATH, COLUMNS_PATH, INFO_PATH] if not p.exists()]
+    if missing_files:
+        raise FileNotFoundError(
+            "Missing required model files:\n" + "\n".join(missing_files)
+        )
+
     model = joblib.load(MODEL_PATH)
     model_columns = joblib.load(COLUMNS_PATH)
     model_info = joblib.load(INFO_PATH)
+
     return model, model_columns, model_info
 
 
-model, model_columns, model_info = load_artifacts()
+try:
+    model, model_columns, model_info = load_artifacts()
+except Exception as e:
+    st.error(f"Failed to load model artifacts: {e}")
+    st.stop()
 
 
-# =========================
+# =========================================================
 # CSS / STYLING
-# =========================
+# =========================================================
 def load_css():
-    if os.path.exists(CSS_PATH):
+    if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     else:
-        st.markdown("""
-        <style>
-        .main {
-            background: linear-gradient(135deg, #eaf4ff 0%, #f9fcff 100%);
-        }
-        .hero-box {
-            background: rgba(255,255,255,0.88);
-            border: 1px solid #d8e6f3;
-            border-radius: 18px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-        }
-        .role-card {
-            background: rgba(255,255,255,0.93);
-            border: 1px solid #dde8f2;
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .metric-card {
-            background: rgba(255,255,255,0.95);
-            border: 1px solid #e3ebf3;
-            border-radius: 16px;
-            padding: 1rem;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            """
+            <style>
+            .main {
+                background: linear-gradient(135deg, #eaf4ff 0%, #f9fcff 100%);
+            }
+            .hero-box {
+                background: rgba(255,255,255,0.88);
+                border: 1px solid #d8e6f3;
+                border-radius: 18px;
+                padding: 1.2rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            }
+            .role-card {
+                background: rgba(255,255,255,0.93);
+                border: 1px solid #dde8f2;
+                border-radius: 16px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+            .metric-card {
+                background: rgba(255,255,255,0.95);
+                border: 1px solid #e3ebf3;
+                border-radius: 16px;
+                padding: 1rem;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
 
 load_css()
 
 
-# =========================
+# =========================================================
 # OPTIONAL MEDICAL BACKGROUND
-# =========================
+# =========================================================
 def set_background_from_asset():
-    """
-    Optional:
-    Put an image in app/assets/background.jpg or background.png
-    and it will be used automatically.
-    """
     possible_files = [
-        os.path.join(BASE_DIR, "app", "assets", "background.jpg"),
-        os.path.join(BASE_DIR, "app", "assets", "background.png"),
-        os.path.join(BASE_DIR, "app", "assets", "doctor_bg.jpg"),
-        os.path.join(BASE_DIR, "app", "assets", "doctor_bg.png"),
+        BASE_DIR / "app" / "assets" / "background.jpg",
+        BASE_DIR / "app" / "assets" / "background.png",
+        BASE_DIR / "app" / "assets" / "doctor_bg.jpg",
+        BASE_DIR / "app" / "assets" / "doctor_bg.png",
     ]
 
-    selected_file = None
-    for path in possible_files:
-        if os.path.exists(path):
-            selected_file = path
-            break
+    selected_file = next((path for path in possible_files if path.exists()), None)
 
     if selected_file:
         with open(selected_file, "rb") as f:
             encoded = base64.b64encode(f.read()).decode()
 
-        ext = "jpg" if selected_file.endswith(".jpg") else "png"
+        ext = "jpg" if selected_file.suffix.lower() == ".jpg" else "png"
 
         st.markdown(
             f"""
             <style>
             .stApp {{
-                background-image: linear-gradient(rgba(240,248,255,0.80), rgba(248,252,255,0.88)), url("data:image/{ext};base64,{encoded}");
+                background-image:
+                    linear-gradient(rgba(240,248,255,0.80), rgba(248,252,255,0.88)),
+                    url("data:image/{ext};base64,{encoded}");
                 background-size: cover;
                 background-position: center;
                 background-attachment: fixed;
@@ -178,9 +178,9 @@ def set_background_from_asset():
 set_background_from_asset()
 
 
-# =========================
+# =========================================================
 # HELPERS
-# =========================
+# =========================================================
 def classify_survival_risk(survival_probability: float) -> str:
     if survival_probability >= 0.80:
         return "Very Low Risk"
@@ -207,23 +207,25 @@ def risk_color(survival_probability: float) -> str:
 
 def plot_probability_gauge(survival_probability: float):
     percent = survival_probability * 100
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=percent,
-        number={"suffix": "%"},
-        title={"text": "Predicted Survival Probability"},
-        gauge={
-            "axis": {"range": [0, 100]},
-            "bar": {"color": risk_color(survival_probability)},
-            "steps": [
-                {"range": [0, 25], "color": "#fde2e2"},
-                {"range": [25, 45], "color": "#fff0d6"},
-                {"range": [45, 65], "color": "#fff7cc"},
-                {"range": [65, 80], "color": "#e6f5d6"},
-                {"range": [80, 100], "color": "#d9f3e5"},
-            ]
-        }
-    ))
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=percent,
+            number={"suffix": "%"},
+            title={"text": "Predicted Survival Probability"},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": risk_color(survival_probability)},
+                "steps": [
+                    {"range": [0, 25], "color": "#fde2e2"},
+                    {"range": [25, 45], "color": "#fff0d6"},
+                    {"range": [45, 65], "color": "#fff7cc"},
+                    {"range": [65, 80], "color": "#e6f5d6"},
+                    {"range": [80, 100], "color": "#d9f3e5"},
+                ],
+            },
+        )
+    )
     fig.update_layout(height=320, margin=dict(l=20, r=20, t=60, b=20))
     return fig
 
@@ -266,7 +268,7 @@ def clean_feature_name(name: str) -> str:
         "hla_severe_mismatch": "Severe HLA Mismatch",
         "cd34_bodymass_interaction": "CD34/Body Mass Interaction",
         "recipient_age_group_engineered": "Recipient Age Group",
-        "donor_age_group_engineered": "Donor Age Group"
+        "donor_age_group_engineered": "Donor Age Group",
     }
 
     if name.startswith("num__"):
@@ -291,7 +293,6 @@ def get_shap_values(model, patient_data):
         preprocessor = base_estimator.named_steps["preprocessor"]
         classifier = base_estimator.named_steps["classifier"]
 
-        # feature engineering step if present
         if "feature_engineering" in base_estimator.named_steps:
             engineered = base_estimator.named_steps["feature_engineering"].transform(patient_data)
         else:
@@ -347,56 +348,58 @@ def plot_shap_bar(top_effects):
     return fig
 
 
-# =========================
+# =========================================================
 # INPUT MAPPINGS
-# =========================
+# IMPORTANT:
+# keep these exactly as used during training
+# =========================================================
 recipient_gender_map = {
     "Female": "0",
-    "Male": "1"
+    "Male": "1",
 }
 
 stemcell_source_map = {
     "Bone Marrow": "0",
-    "Peripheral Blood": "1"
+    "Peripheral Blood": "1",
 }
 
 gender_match_map = {
     "Other": "0",
-    "Female to Male": "1"
+    "Female to Male": "1",
 }
 
 abo_map = {
     "O": "0",
     "A": "1",
     "B": "-1",
-    "AB": "2"
+    "AB": "2",
 }
 
 recipient_rh_map = {
     "Negative": "0",
-    "Positive": "1"
+    "Positive": "1",
 }
 
 cmv_binary_map = {
     "Absent": "0",
-    "Present": "1"
+    "Present": "1",
 }
 
 risk_group_map = {
     "Low Risk": "0",
-    "High Risk": "1"
+    "High Risk": "1",
 }
 
 disease_group_map = {
     "Non-malignant": "0",
-    "Malignant": "1"
+    "Malignant": "1",
 }
 
 hla_match_map = {
     "10/10": "0",
     "9/10": "1",
     "8/10": "2",
-    "7/10": "3"
+    "7/10": "3",
 }
 
 hla_group_map = {
@@ -405,7 +408,7 @@ hla_group_map = {
     "One allele difference": "2",
     "Only DRB1 difference": "3",
     "Two differences (type 1)": "4",
-    "Two differences (type 2)": "5"
+    "Two differences (type 2)": "5",
 }
 
 disease_options = ["ALL", "AML", "chronic", "nonmalignant", "lymphoma"]
@@ -414,13 +417,13 @@ cmvstatus_options = [
     "Donor-/Recipient-",
     "Donor-/Recipient+",
     "Donor+/Recipient-",
-    "Donor+/Recipient+"
+    "Donor+/Recipient+",
 ]
 
 
-# =========================
+# =========================================================
 # AUTH UI
-# =========================
+# =========================================================
 def show_auth_screen():
     st.markdown(
         """
@@ -432,13 +435,13 @@ def show_auth_screen():
             </p>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     mode = st.radio(
         "Choose access mode",
         ["Login", "Create Account"],
-        horizontal=True
+        horizontal=True,
     )
 
     if mode == "Login":
@@ -471,8 +474,8 @@ def show_auth_screen():
                 format_func=lambda x: {
                     "doctor": "Doctor",
                     "nurse": "Nurse",
-                    "public": "General User"
-                }[x]
+                    "public": "General User",
+                }[x],
             )
             submitted = st.form_submit_button("Create Account")
 
@@ -484,9 +487,9 @@ def show_auth_screen():
                 st.error(result["message"])
 
 
-# =========================
+# =========================================================
 # MAIN APP UI
-# =========================
+# =========================================================
 def show_sidebar_inputs():
     st.sidebar.header("Patient Inputs")
 
@@ -537,7 +540,7 @@ def show_sidebar_inputs():
         "HLAgrI": hla_group_map[hla_group],
         "Recipientage": recipient_age,
         "CD34kgx10d6": cd34_dose,
-        "Rbodymass": recipient_body_mass
+        "Rbodymass": recipient_body_mass,
     }
 
     return inputs, predict_now
@@ -567,7 +570,7 @@ def show_main_app():
             <p><b>Logged in as:</b> {user['full_name']} | <b>Role:</b> {role.title()}</p>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     topbar_col1, topbar_col2 = st.columns([8, 1])
@@ -582,17 +585,24 @@ def show_main_app():
         st.info("Fill in the clinical data in the sidebar, then click 'Predict Outcome'.")
         return
 
-    patient_data = build_patient_dataframe(inputs)
+    try:
+        patient_data = build_patient_dataframe(inputs)
+    except Exception as e:
+        st.error(f"Input/model mismatch: {e}")
+        return
 
-    # IMPORTANT: model target meaning
-    # 0 = alive, 1 = dead
-    proba = model.predict_proba(patient_data)[0]
-    prediction = int(model.predict(patient_data)[0])
+    try:
+        proba = model.predict_proba(patient_data)[0]
+        prediction = int(model.predict(patient_data)[0])
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
+        return
 
     if len(proba) != 2:
         st.error("Unexpected probability output from model.")
         return
 
+    # IMPORTANT: assumes target coding is 0 = alive, 1 = dead
     death_probability = float(proba[1])
     survival_probability = 1.0 - death_probability
     risk_label = classify_survival_risk(survival_probability)
@@ -604,7 +614,7 @@ def show_main_app():
         survival_probability=survival_probability,
         death_probability=death_probability,
         risk_label=risk_label,
-        top_effects=top_effects
+        top_effects=top_effects,
     )
 
     tabs = st.tabs(["Prediction", "Explanation", "Technical", "About"])
@@ -616,7 +626,7 @@ def show_main_app():
             st.markdown("### Patient Summary")
             summary_df = pd.DataFrame({
                 "Feature": patient_data.columns,
-                "Value": patient_data.iloc[0].values
+                "Value": patient_data.iloc[0].values,
             })
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
@@ -653,6 +663,8 @@ def show_main_app():
             st.markdown("### Top Influential Factors")
             fig = plot_shap_bar(top_effects)
             st.pyplot(fig)
+        else:
+            st.warning("SHAP explanation is not available for this model configuration.")
 
     with tabs[2]:
         if role == "doctor":
@@ -665,7 +677,7 @@ def show_main_app():
                 "test_roc_auc": model_info.get("test_roc_auc"),
                 "final_cv_roc_auc_mean": model_info.get("final_cv_roc_auc_mean"),
                 "final_cv_roc_auc_std": model_info.get("final_cv_roc_auc_std"),
-                "target_meaning": model_info.get("target_meaning")
+                "target_meaning": model_info.get("target_meaning"),
             })
 
             if top_effects:
@@ -705,9 +717,9 @@ def show_main_app():
         )
 
 
-# =========================
+# =========================================================
 # APP ROUTER
-# =========================
+# =========================================================
 if st.session_state.user is None:
     show_auth_screen()
 else:
