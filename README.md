@@ -54,8 +54,7 @@ The initial analysis revealed that the pediatric bone marrow transplant dataset 
   Prompt engineering was highly useful for debugging technical issues and accelerating preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve handling of missing values and formatting issues. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw.arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
 
 
-DATA ANALYSIS :
-Feature Analysis and Selection for Survival Prediction
+## DATA ANALYSIS :Feature Analysis and Selection for Survival Prediction
    
    The dataset initially contains 36 features describing characteristics of the donor, recipient, transplant procedure, and post-transplant clinical outcomes. The goal of the analysis is to determine which variables should be used to maximize the predictive performance of a survival prediction model, while avoiding redundancy, noise, and information leakage.
    
