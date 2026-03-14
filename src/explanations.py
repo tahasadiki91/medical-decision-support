@@ -188,4 +188,5 @@ def generate_role_based_explanation(
 
     return generate_public_explanation(
         survival_probability, death_probability, risk_label, top_effects
-    )
+       )
+    
