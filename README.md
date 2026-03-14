@@ -18,7 +18,7 @@ This project is fully reproducible. To run the application locally, follow these
 ## Critical Analysis & Findings
 
 1. Was the dataset balanced? If not, how did you handle imbalance? and what was the impact?
-The dataset was moderately imbalanced (~60% survived, 40% not survived). I addressed this by implementing a Class-weight adjustment strategy during model training. The impact was highly positive, allowing the model to prioritize the minority class without requiring synthetic data generation, resulting in balanced precision and recall.
+The initial analysis revealed that the pediatric bone marrow transplant dataset was moderately imbalanced, with approximately 60% of cases representing survival and 40% representing non-survival. To correct this bias without altering the integrity of the original clinical data, a class-weight adjustment strategy was prioritized during model training. This mathematical approach allowed for heavier penalization of prediction errors on the minority class, thereby eliminating the need to rely on methods that generate synthetic data, such as oversampling (SMOTE) , or that discard valuable information, such as undersampling. The impact was highly positive: the algorithm was able to effectively prioritize the detection of minority cases while learning from the entirety of the real dataset. This resulted in an excellent balance between precision and recall, an absolute requirement for the reliability of this medical decision-support application.
 
 2. Which ML model performed best? Provide performance metrics.
 After removing target leakage to ensure an honest predictive model, XGBoost slightly outperformed Random Forest in overall ROC-AUC, though they tied in accuracy.
