@@ -21,9 +21,9 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 
-# =========================================================
+
 # FORCE PROJECT ROOT INTO PYTHON PATH
-# =========================================================
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -32,9 +32,9 @@ from src.auth import ensure_db, create_user, authenticate_user
 from src.explanations import generate_role_based_explanation
 
 
-# =========================================================
+
 # PAGE CONFIG
-# =========================================================
+
 st.set_page_config(
     page_title="Pediatric BMT Survival Predictor",
     page_icon="🩺",
