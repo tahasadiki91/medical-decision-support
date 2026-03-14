@@ -5,3 +5,5 @@ __pycache__/
 data/raw/
 models/*.pkl
 *.log
+.idea/
+.pytest_cache/
