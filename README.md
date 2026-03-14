@@ -61,24 +61,7 @@ The initial analysis revealed that the pediatric bone marrow transplant dataset 
    To achieve this, several preprocessing and feature-selection steps were applied.
    
    1. Removing Post-Transplant Variables (Data Leakage)
-    The first step was to remove variables that describe events occurring after the transplantation, because they cannot be      used for prediction at the time of transplantation. Including them would introduce data leakage, meaning the model
-     would indirectly use information about the future outcome.
-   
-     The following variables were excluded for this reason:
-   
-     Relapse: recurrence of the disease after transplantation
-   
-     aGvHDIIIIV: acute graft versus host disease stage III or IV
-   
-     extcGvHD: extensive chronic graft versus host disease
-   
-     ANCrecovery: time to neutrophil recovery
-   
-     PLTrecovery: time to platelet recovery
-   
-     time_to_aGvHD_III_IV: time until severe graft versus host disease
-   
-     These variables occur after the transplantation procedure and are therefore not appropriate predictors when estimating       survival beforehand.
+
    
    2. Removing Redundant Variables
       Several variables describe the same biological information in different formats. Keeping all of them would introduce         redundancy and multicollinearity, which can negatively affect the stability of machine learning models. Examples             include:
@@ -109,43 +92,43 @@ The initial analysis revealed that the pediatric bone marrow transplant dataset 
       HLA compatibility: Several variables describe the same immunological compatibility (HLAmatch, HLAmismatch, Antigen,          Allele, HLAgrI). These represent different ways of quantifying the mismatch between donor and recipient HLA markers.         Because they are highly correlated, typically one detailed representation (such as HLAmatch or HLAgrI) is sufficient.
    
    4. Handling Variables with Missing Values
-    Some variables contain missing data: RecipientABO, RecipientRh, CMVstatus, DonorCMV, RecipientCMV, Antigen, Allele,          extcGvHD, CD3dCD34, CD3dkgx10d8, and Rbodymass.
+       Some variables contain missing data: RecipientABO, RecipientRh, CMVstatus, DonorCMV, RecipientCMV, Antigen, Allele,          extcGvHD, CD3dCD34, CD3dkgx10d8, and Rbodymass.
    
-    When the proportion of missing values is high, the reliability of these features decreases. They can either be imputed       or removed depending on the preprocessing strategy.
+      When the proportion of missing values is high, the reliability of these features decreases. They can either be imputed       or removed depending on the preprocessing strategy.
    
    5. Reducing Highly Correlated Biological Variables
-     Certain variables describe related biological quantities and are strongly correlated. Examples include:
+      Certain variables describe related biological quantities and are strongly correlated. Examples include:
    
-     CD34kgx10d6: dose of CD34+ stem cells
+      CD34kgx10d6: dose of CD34+ stem cells
    
-     CD3dCD34: ratio between CD3+ and CD34+ cells
+      CD3dCD34: ratio between CD3+ and CD34+ cells
    
-     CD3dkgx10d8: dose of CD3+ cells
+      CD3dkgx10d8: dose of CD3+ cells
    
-     Because these variables measure similar immunological characteristics, keeping all of them may introduce redundancy.         Typically, one representative variable such as CD34kgx10d6 is retained.
+      Because these variables measure similar immunological characteristics, keeping all of them may introduce redundancy.         Typically, one representative variable such as CD34kgx10d6 is retained.
    
    6. Selecting Clinically Relevant Predictors
-     After removing post-event variables, redundant features, and variables with excessive missing data, the remaining            features represent clinically meaningful predictors available before transplantation. The most informative predictors        typically include:
+      After removing post-event variables, redundant features, and variables with excessive missing data, the remaining            features represent clinically meaningful predictors available before transplantation. The most informative predictors        typically include:
    
-     Recipientage: recipient age at transplantation
+      Recipientage: recipient age at transplantation
    
-     Donorage: donor age
+      Donorage: donor age
    
-     Riskgroup: disease risk classification
+      Riskgroup: disease risk classification
    
-     Disease / Diseasegroup: type of hematological disease
+      Disease / Diseasegroup: type of hematological disease
+    
+      HLAmatch / HLAgrI: immunological compatibility between donor and recipient
    
-     HLAmatch / HLAgrI: immunological compatibility between donor and recipient
+      Stemcellsource: source of hematopoietic stem cells
+    
+      CD34kgx10d6: transplanted stem cell dose
    
-     Stemcellsource: source of hematopoietic stem cells
+      Gendermatch: donor-recipient gender compatibility
    
-     CD34kgx10d6: transplanted stem cell dose
+      CMVstatus: cytomegalovirus serological compatibility (if data quality allows)
    
-     Gendermatch: donor-recipient gender compatibility
-   
-     CMVstatus: cytomegalovirus serological compatibility (if data quality allows)
-   
-     These features represent biologically plausible factors influencing transplantation outcomes, making them appropriate        predictors for survival estimation.
+      These features represent biologically plausible factors influencing transplantation outcomes, making them appropriate        predictors for survival estimation.
    
 Conclusion
 
