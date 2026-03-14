@@ -45,18 +45,10 @@ The initial analysis revealed that the pediatric bone marrow transplant dataset 
     Even though both models have the same overall accuracy of 76.3%, we chose XGBoost because of its higher ROC-AUC score.       Accuracy simply calculates the percentage of correct answers at a fixed threshold (for example, 50% probability). ROC-       AUC, on the other hand, evaluates the model's overall ability to separate the two groups (patients who survive and those     who do not), regardless of the chosen threshold. In medicine, this is a much more important metric because it proves         that the model can fundamentally distinguish between a high-risk profile and a safe one.
 
 3. Which medical features most influenced predictions (SHAP results)?
-  After removing target leakage (specifically the survival_time variable) to ensure an honest predictive model, the SHAP       explainability analysis revealed that the top three pre-transplant features influencing the model's predictions are:
-
-   Relapse: The patient's relapse history.
- 
-   PLTrecovery: The platelet recovery time.
-
-   CD34kgx10d6: The CD34+ cell dose.
-
-   These results confirm that the model relies on highly relevant clinical factors to evaluate the probability of a              successful  pediatric bone marrow transplant.
+  After removing post-transplant variables to prevent data leakage, SHAP analysis showed that the most influential features were clinically meaningful pre-transplant predictors, including risk group, recipient age, donor age, HLA compatibility, stem cell source, disease category, gender match, CMV status, and CD34+ cell dose. These features are medically plausible because they reflect the patient profile, donor-recipient compatibility, and transplant characteristics known before the procedure.
 
 4. What insights did prompt engineering provide for your selected task?
-  Prompt engineering was critical for debugging complex library versioning issues and handling data formatting. For example,    I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent              update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the            raw.arff   dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
+  Prompt engineering was highly useful for debugging technical issues and accelerating preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve handling of missing values and formatting issues. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw.arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
 
 
 DATA ANALYSIS :
