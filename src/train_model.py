@@ -1,4 +1,5 @@
 import os
+from src.feature_engineering import ClinicalFeatureEngineer
 import warnings
 import joblib
 import numpy as np
@@ -71,75 +72,6 @@ TARGET = "survival_status"
 # =========================
 # FEATURE ENGINEERING CLINIQUE
 # =========================
-class ClinicalFeatureEngineer(BaseEstimator, TransformerMixin):
-    """
-    Crée des features cliniques dérivées à partir des variables de base.
-    L'app peut continuer à envoyer seulement BASE_FEATURES.
-    """
-
-    def fit(self, X, y=None):
-        return self
-
-    def transform(self, X):
-        df = X.copy()
-
-        if not isinstance(df, pd.DataFrame):
-            df = pd.DataFrame(df, columns=BASE_FEATURES)
-
-        # Conversion sécurisée de quelques variables numériques
-        for col in ["Donorage", "Recipientage", "CD34kgx10d6", "Rbodymass"]:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce")
-
-        # Âges
-        if {"Donorage", "Recipientage"}.issubset(df.columns):
-            df["age_gap"] = df["Donorage"] - df["Recipientage"]
-            df["donor_older"] = (df["Donorage"] > df["Recipientage"]).astype("object")
-            df["donor_age_ratio"] = df["Donorage"] / (df["Recipientage"] + 1.0)
-
-        # ABO mismatch
-        if {"DonorABO", "RecipientABO"}.issubset(df.columns):
-            df["abo_mismatch"] = (
-                df["DonorABO"].astype("object") != df["RecipientABO"].astype("object")
-            ).astype("object")
-
-        # CMV mismatch
-        if {"DonorCMV", "RecipientCMV"}.issubset(df.columns):
-            df["cmv_mismatch"] = (
-                df["DonorCMV"].astype("object") != df["RecipientCMV"].astype("object")
-            ).astype("object")
-
-        # HLA
-        if "HLAmatch" in df.columns:
-            hla_num = pd.to_numeric(df["HLAmatch"], errors="coerce")
-            df["hla_perfect_match"] = (hla_num == 0).astype("object")
-            df["hla_severe_mismatch"] = (hla_num >= 2).astype("object")
-
-        # Interaction CD34 / masse
-        if {"CD34kgx10d6", "Rbodymass"}.issubset(df.columns):
-            df["cd34_bodymass_interaction"] = (
-                df["CD34kgx10d6"] * np.log1p(df["Rbodymass"])
-            )
-
-        # Groupes d'âge receveur
-        if "Recipientage" in df.columns:
-            age = pd.to_numeric(df["Recipientage"], errors="coerce")
-            df["recipient_age_group_engineered"] = pd.cut(
-                age,
-                bins=[-np.inf, 5, 10, 20, np.inf],
-                labels=["0_5", "5_10", "10_20", "20_plus"]
-            ).astype("object")
-
-        # Groupes d'âge donneur
-        if "Donorage" in df.columns:
-            d_age = pd.to_numeric(df["Donorage"], errors="coerce")
-            df["donor_age_group_engineered"] = pd.cut(
-                d_age,
-                bins=[-np.inf, 25, 35, 50, np.inf],
-                labels=["0_25", "25_35", "35_50", "50_plus"]
-            ).astype("object")
-
-        return df
 
 
 # =========================

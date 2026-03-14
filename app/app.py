@@ -1,3 +1,12 @@
+import os
+import sys
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+from src.feature_engineering import ClinicalFeatureEngineer
+from src.feature_engineering import ClinicalFeatureEngineer
 from pathlib import Path
 import sys
 import os
@@ -724,3 +733,4 @@ if st.session_state.user is None:
     show_auth_screen()
 else:
     show_main_app()
+

@@ -1,3 +1,4 @@
+from src.feature_engineering import ClinicalFeatureEngineer
 import os
 import joblib
 import pandas as pd
@@ -40,3 +41,4 @@ def test_model_can_predict():
     assert proba.shape == (1, 2)
     assert 0.0 <= proba[0][0] <= 1.0
     assert 0.0 <= proba[0][1] <= 1.0
+
