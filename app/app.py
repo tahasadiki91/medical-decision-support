@@ -43,9 +43,9 @@ st.set_page_config(
 )
 
 
-# =========================================================
+
 # PATHS
-# =========================================================
+
 BASE_DIR = PROJECT_ROOT
 MODEL_PATH = BASE_DIR / "models" / "rf_model.pkl"
 COLUMNS_PATH = BASE_DIR / "models" / "model_columns.pkl"
