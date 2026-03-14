@@ -18,7 +18,7 @@ from sklearn.preprocessing import OneHotEncoder
 # PATHS
 # =========================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(BASE_DIR, "data", "bone-marrow.arff")
+DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "bone-marrow.arff")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODELS_DIR, "rf_model.pkl")
 COLUMNS_PATH = os.path.join(MODELS_DIR, "model_columns.pkl")
@@ -27,7 +27,6 @@ COLUMNS_PATH = os.path.join(MODELS_DIR, "model_columns.pkl")
 # =========================
 # FEATURE CONFIGURATION
 # =========================
-# We keep only pre-transplant and transplant-time variables.
 FEATURES = [
     "Recipientgender",
     "Stemcellsource",
@@ -80,7 +79,6 @@ CATEGORICAL_FEATURES = [
 # DATA LOADING
 # =========================
 def load_arff_dataset(path: str) -> pd.DataFrame:
-    """Load ARFF dataset into a pandas DataFrame and decode byte strings."""
     data, _ = arff.loadarff(path)
     df = pd.DataFrame(data)
 
@@ -89,9 +87,7 @@ def load_arff_dataset(path: str) -> pd.DataFrame:
             lambda x: x.decode("utf-8") if isinstance(x, bytes) else x
         )
 
-    # Standard missing markers
     df.replace(["?", "None", "none", "nan", "NaN", ""], np.nan, inplace=True)
-
     return df
 
 
@@ -99,15 +95,12 @@ def load_arff_dataset(path: str) -> pd.DataFrame:
 # DATA CLEANING
 # =========================
 def cast_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Cast feature columns to appropriate numeric/object dtypes."""
     df = df.copy()
 
     for col in NUMERIC_FEATURES:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # IMPORTANT:
-    # use object, not pandas string dtype, to avoid sklearn/pandas NA issues
     for col in CATEGORICAL_FEATURES:
         if col in df.columns:
             df[col] = df[col].astype("object")
