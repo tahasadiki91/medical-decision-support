@@ -1,3 +1,10 @@
+from pathlib import Path
+import sys
+
+# Force project root into Python path BEFORE any local imports
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 import os
 import base64
 import streamlit as st
@@ -10,14 +17,6 @@ import plotly.graph_objects as go
 
 from src.auth import ensure_db, create_user, authenticate_user
 from src.explanations import generate_role_based_explanation
-
-import os
-import sys
-
-# Make project root importable
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if BASE_DIR not in sys.path:
-    sys.path.append(BASE_DIR)
 
 import base64
 import streamlit as st
