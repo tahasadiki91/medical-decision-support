@@ -30,6 +30,44 @@ Our objective is to predict the binary target **`survival_status`**.
 
 ---
 
+## Project Pipeline
+
+```mermaid
+graph TD
+    A[Dataset] --> B[Preprocessing]
+    B --> C[Feature Selection]
+    C --> D[Model Comparison]
+    D --> E[Best Model: XGBoost]
+    E --> F[SHAP Explainability]
+    F --> G[Streamlit App]
+```
+
+---
+
+## Visual Overview
+
+### Class Distribution
+
+![Class Distribution](assets/class_distribution.png)
+
+### Model Comparison
+
+![Model Comparison](assets/model_comparison.png)
+
+### ROC Curve
+
+![ROC Curve](assets/roc_curve.png)
+
+### SHAP Feature Importance
+
+![SHAP Importance](assets/shap_importance.png)
+
+### Application Screenshot
+
+![Streamlit App Screenshot](assets/app_screenshot.png)
+
+---
+
 ## How to Run the Project
 
 This project is fully reproducible.
@@ -190,7 +228,7 @@ These results show that several variables encode very similar information. Inste
 
 ---
 
-## Conclusion and Final Predictors
+## Final Predictive Features
 
 Through this selection process, we reduced the dataset to the most clinically relevant pre-transplant predictors.
 
@@ -217,6 +255,12 @@ project/
 │   └── evaluate_model.py
 ├── app/
 │   └── app.py
+├── assets/
+│   ├── class_distribution.png
+│   ├── model_comparison.png
+│   ├── roc_curve.png
+│   ├── shap_importance.png
+│   └── app_screenshot.png
 ├── tests/
 ├── requirements.txt
 └── README.md
