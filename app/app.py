@@ -1,15 +1,5 @@
-import os
-import sys
-
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
-from src.feature_engineering import ClinicalFeatureEngineer
-from src.feature_engineering import ClinicalFeatureEngineer
 from pathlib import Path
 import sys
-import os
 import base64
 
 import streamlit as st
@@ -20,32 +10,30 @@ import shap
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-
-
-# FORCE PROJECT ROOT INTO PYTHON PATH
-
+# Force project root into Python path before loading local modules / pickle classes
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.feature_engineering import ClinicalFeatureEngineer  # noqa: F401
 from src.auth import ensure_db, create_user, authenticate_user
 from src.explanations import generate_role_based_explanation
 
 
-
+# =========================================================
 # PAGE CONFIG
-
+# =========================================================
 st.set_page_config(
     page_title="Pediatric BMT Survival Predictor",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
-
+# =========================================================
 # PATHS
-
+# =========================================================
 BASE_DIR = PROJECT_ROOT
 MODEL_PATH = BASE_DIR / "models" / "rf_model.pkl"
 COLUMNS_PATH = BASE_DIR / "models" / "model_columns.pkl"
@@ -76,14 +64,11 @@ ensure_db()
 def load_artifacts():
     missing_files = [str(p) for p in [MODEL_PATH, COLUMNS_PATH, INFO_PATH] if not p.exists()]
     if missing_files:
-        raise FileNotFoundError(
-            "Missing required model files:\n" + "\n".join(missing_files)
-        )
+        raise FileNotFoundError("Missing required model files:\n" + "\n".join(missing_files))
 
     model = joblib.load(MODEL_PATH)
     model_columns = joblib.load(COLUMNS_PATH)
     model_info = joblib.load(INFO_PATH)
-
     return model, model_columns, model_info
 
 
@@ -98,93 +83,326 @@ except Exception as e:
 # CSS / STYLING
 # =========================================================
 def load_css():
-    # Load project CSS first when it exists
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    # Then force a readable medical theme override
+    # Force the final theme after external CSS so the override always wins.
     st.markdown(
         """
         <style>
-        .stApp, .main {
-            color: #102a43;
+        :root {
+            --bmt-bg-1: #b7cfdf;
+            --bmt-bg-2: #9cb8ca;
+            --bmt-bg-3: #7f9fb3;
+            --bmt-surface: rgba(241, 247, 251, 0.92);
+            --bmt-surface-2: rgba(229, 238, 245, 0.92);
+            --bmt-border: rgba(67, 102, 128, 0.26);
+            --bmt-text: #102a43;
+            --bmt-text-soft: #486581;
+            --bmt-primary: #165d79;
+            --bmt-secondary: #2f855a;
+            --bmt-danger: #c53030;
+            --bmt-shadow: 0 16px 40px rgba(16, 42, 67, 0.12);
         }
 
-        .main {
-            background: linear-gradient(135deg, #dcebf5 0%, #c9dceb 55%, #b8d1e3 100%);
+        html, body, [class*="css"] {
+            color: var(--bmt-text);
         }
 
-        .hero-box {
-            background: rgba(241, 247, 251, 0.94);
-            border: 1px solid #b7cede;
-            border-radius: 18px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 8px 24px rgba(16, 42, 67, 0.08);
-            color: #102a43;
+        .stApp {
+            color: var(--bmt-text) !important;
         }
 
-        .role-card {
-            background: rgba(236, 244, 249, 0.95);
-            border: 1px solid #bfd3e1;
-            border-radius: 16px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            color: #102a43;
+        .main .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
         }
 
-        .metric-card {
-            background: rgba(230, 240, 247, 0.96);
-            border: 1px solid #b7cede;
-            border-radius: 16px;
-            padding: 1rem;
-            color: #102a43;
-        }
-
-        [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #d7e6f0 0%, #c4d8e7 100%);
+        [data-testid="stAppViewContainer"] {
+            background: transparent !important;
         }
 
         [data-testid="stHeader"] {
-            background: rgba(215, 230, 240, 0.75);
+            background: rgba(201, 221, 234, 0.52) !important;
+            backdrop-filter: blur(8px);
         }
 
-        .stTabs [data-baseweb="tab"] {
-            background-color: rgba(236, 244, 249, 0.85);
-            border-radius: 10px 10px 0 0;
-            color: #102a43;
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, rgba(220, 235, 245, 0.92) 0%, rgba(188, 210, 225, 0.96) 100%) !important;
+            border-right: 1px solid rgba(55, 84, 109, 0.10);
         }
 
-        .stTabs [aria-selected="true"] {
-            background-color: rgba(201, 220, 235, 0.95);
-            color: #0b2239;
+        [data-testid="stSidebar"] * {
+            color: var(--bmt-text) !important;
+        }
+
+        .hero-shell {
+            background: linear-gradient(135deg, rgba(244, 249, 253, 0.94) 0%, rgba(227, 237, 245, 0.92) 100%);
+            border: 1px solid var(--bmt-border);
+            border-radius: 28px;
+            padding: 1.35rem 1.35rem 1.2rem 1.35rem;
+            box-shadow: var(--bmt-shadow);
+            margin-bottom: 1.1rem;
+        }
+
+        .hero-box {
+            background: linear-gradient(135deg, rgba(241, 247, 251, 0.96) 0%, rgba(229, 238, 245, 0.94) 100%) !important;
+            border: 1px solid var(--bmt-border) !important;
+            border-radius: 24px !important;
+            padding: 1.4rem !important;
+            margin-bottom: 1rem !important;
+            box-shadow: var(--bmt-shadow) !important;
+            color: var(--bmt-text) !important;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 96px 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .hero-icon {
+            width: 92px;
+            height: 92px;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #dbeaf3 0%, #bad2e1 100%);
+            border: 1px solid rgba(22, 93, 121, 0.18);
+            box-shadow: inset 0 2px 10px rgba(255,255,255,0.45), 0 12px 28px rgba(22, 93, 121, 0.10);
+            font-size: 2.35rem;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--bmt-text);
+            margin: 0;
+            line-height: 1.05;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--bmt-text-soft);
+            margin: 0.35rem 0 0 0;
+            line-height: 1.55;
+        }
+
+        .hero-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 0.95rem;
+        }
+
+        .hero-pill {
+            background: rgba(22, 93, 121, 0.08);
+            color: var(--bmt-primary);
+            border: 1px solid rgba(22, 93, 121, 0.12);
+            padding: 0.42rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.88rem;
             font-weight: 600;
         }
 
+        .accent-line {
+            height: 5px;
+            width: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #1f6f8b 0%, #3a8fb7 45%, #48bb78 100%);
+            margin-top: 1rem;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(244, 249, 253, 0.88) 0%, rgba(232, 240, 246, 0.92) 100%);
+            border: 1px solid var(--bmt-border);
+            border-radius: 20px;
+            padding: 1rem 1rem 0.9rem 1rem;
+            box-shadow: 0 10px 26px rgba(16, 42, 67, 0.08);
+            min-height: 150px;
+        }
+
+        .feature-card h4 {
+            margin: 0 0 0.45rem 0;
+            color: var(--bmt-text) !important;
+            font-size: 1.02rem;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            margin: 0;
+            color: var(--bmt-text-soft) !important;
+            line-height: 1.55;
+            font-size: 0.93rem;
+        }
+
+        .mini-stat {
+            background: rgba(255,255,255,0.45);
+            border: 1px solid rgba(22, 93, 121, 0.12);
+            border-radius: 16px;
+            padding: 0.75rem 0.85rem;
+        }
+
+        .mini-stat .value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--bmt-primary);
+            line-height: 1;
+        }
+
+        .mini-stat .label {
+            font-size: 0.82rem;
+            color: var(--bmt-text-soft);
+            margin-top: 0.25rem;
+        }
+
+        .role-card, .metric-card {
+            background: linear-gradient(135deg, rgba(241, 247, 251, 0.96) 0%, rgba(229, 238, 245, 0.92) 100%) !important;
+            border: 1px solid var(--bmt-border) !important;
+            border-radius: 18px !important;
+            padding: 1rem !important;
+            margin-bottom: 1rem !important;
+            color: var(--bmt-text) !important;
+            box-shadow: 0 12px 28px rgba(16, 42, 67, 0.08) !important;
+        }
+
+        .section-card {
+            background: linear-gradient(135deg, rgba(242, 248, 252, 0.94) 0%, rgba(232, 240, 246, 0.92) 100%);
+            border: 1px solid var(--bmt-border);
+            border-radius: 18px;
+            padding: 1rem 1rem 0.85rem 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 12px 28px rgba(16, 42, 67, 0.08);
+        }
+
+        .section-card h3,
+        .section-card p,
+        .section-card li {
+            color: var(--bmt-text) !important;
+        }
+
+        .focus-banner {
+            background: linear-gradient(90deg, rgba(22, 93, 121, 0.12) 0%, rgba(72, 187, 120, 0.12) 100%);
+            border: 1px solid rgba(22, 93, 121, 0.16);
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+            color: var(--bmt-text);
+            margin-bottom: 0.8rem;
+            font-size: 0.95rem;
+        }
+
+        .focus-banner strong {
+            color: var(--bmt-primary);
+        }
+
+        div[data-baseweb="input"] > div,
+        div[data-baseweb="select"] > div,
+        .stTextInput > div > div > input,
+        .stNumberInput > div > div > input,
+        textarea {
+            background: rgba(248, 252, 255, 0.94) !important;
+            color: var(--bmt-text) !important;
+            border: 1px solid rgba(67, 102, 128, 0.22) !important;
+            border-radius: 14px !important;
+        }
+
+        .stTextInput label,
+        .stNumberInput label,
+        .stSelectbox label,
+        .stMultiSelect label,
+        .stRadio label,
+        .stMarkdown,
+        .stAlert,
+        .stSubheader,
+        h1, h2, h3, h4, h5, h6, p, li, span, div {
+            color: var(--bmt-text) !important;
+        }
+
+        .stRadio > div {
+            gap: 0.8rem;
+        }
+
+        .stRadio [role="radiogroup"] {
+            background: rgba(244, 249, 253, 0.74);
+            border: 1px solid rgba(67, 102, 128, 0.18);
+            border-radius: 14px;
+            padding: 0.45rem 0.75rem;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.45rem;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background: rgba(234, 243, 248, 0.82) !important;
+            border-radius: 14px 14px 0 0 !important;
+            border: 1px solid rgba(67, 102, 128, 0.14) !important;
+            padding: 0.6rem 1rem !important;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: rgba(205, 224, 236, 0.98) !important;
+            color: #0b2239 !important;
+            font-weight: 700 !important;
+        }
+
         .stButton > button,
-        .stDownloadButton > button {
-            background: linear-gradient(135deg, #4f8fbf 0%, #3f78a5 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
+        .stFormSubmitButton > button {
+            background: linear-gradient(135deg, #1f6f8b 0%, #18556f 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 14px !important;
+            padding: 0.58rem 1rem !important;
+            font-weight: 700 !important;
+            box-shadow: 0 10px 22px rgba(22, 93, 121, 0.22);
         }
 
         .stButton > button:hover,
-        .stDownloadButton > button:hover {
-            border: none;
-            color: white;
-            filter: brightness(1.05);
+        .stFormSubmitButton > button:hover {
+            background: linear-gradient(135deg, #18556f 0%, #124559 100%) !important;
         }
 
-        .stDataFrame, div[data-testid="stMetric"], div[data-testid="stAlert"],
-        div[data-testid="stForm"], div[data-testid="stExpander"] {
-            background-color: rgba(243, 248, 252, 0.88);
-            border-radius: 14px;
+        div[data-testid="stMetric"] {
+            background: linear-gradient(135deg, rgba(244, 249, 253, 0.96) 0%, rgba(231, 240, 246, 0.94) 100%);
+            border: 1px solid var(--bmt-border);
+            padding: 1rem;
+            border-radius: 18px;
+            box-shadow: 0 10px 24px rgba(16, 42, 67, 0.08);
         }
 
-        h1, h2, h3, h4, h5, h6, p, label, div, span {
-            color: #102a43;
+        div[data-testid="stMetricLabel"] {
+            color: var(--bmt-text-soft) !important;
+        }
+
+        .stDataFrame,
+        div[data-testid="stAlert"] {
+            background: rgba(244, 249, 253, 0.86) !important;
+            border-radius: 18px !important;
+            border: 1px solid rgba(67, 102, 128, 0.12) !important;
+        }
+
+        .footer-note {
+            color: var(--bmt-text-soft);
+            font-size: 0.88rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-icon {
+                margin: 0 auto;
+            }
+
+            .hero-pills {
+                justify-content: center;
+            }
         }
         </style>
         """,
@@ -196,7 +414,7 @@ load_css()
 
 
 # =========================================================
-# OPTIONAL MEDICAL BACKGROUND
+# MEDICAL BACKGROUND
 # =========================================================
 def set_background_from_asset():
     possible_files = [
@@ -219,7 +437,7 @@ def set_background_from_asset():
             <style>
             .stApp {{
                 background-image:
-                    linear-gradient(rgba(220, 235, 245, 0.88), rgba(184, 209, 227, 0.92)),
+                    linear-gradient(rgba(222, 235, 244, 0.86), rgba(170, 194, 209, 0.88)),
                     url("data:image/{ext};base64,{encoded}");
                 background-size: cover;
                 background-position: center;
@@ -234,7 +452,7 @@ def set_background_from_asset():
             """
             <style>
             .stApp {
-                background: linear-gradient(135deg, #dcebf5 0%, #c9dceb 55%, #b8d1e3 100%);
+                background: linear-gradient(135deg, #b7cfdf 0%, #9cb8ca 52%, #7f9fb3 100%) !important;
             }
             </style>
             """,
@@ -248,14 +466,105 @@ set_background_from_asset()
 # =========================================================
 # HELPERS
 # =========================================================
+def render_project_signature(user=None):
+    user_line = ""
+    if user is not None:
+        user_line = (
+            f"<p class='hero-subtitle'><b>Logged in as:</b> {user['full_name']} "
+            f"| <b>Role:</b> {user['role'].title()}</p>"
+        )
+
+    st.markdown(
+        f"""
+        <div class="hero-shell">
+            <div class="hero-grid">
+                <div class="hero-icon">🦴🩸</div>
+                <div>
+                    <h1 class="hero-title">Pediatric BMT Survival Predictor</h1>
+                    <p class="hero-subtitle">
+                        Explainable AI support for pediatric <b>bone marrow transplant</b> evaluation,
+                        combining prediction, transparency, and role-based clinical communication.
+                    </p>
+                    {user_line}
+                    <div class="hero-pills">
+                        <span class="hero-pill">🧬 Bone Marrow Transplant</span>
+                        <span class="hero-pill">📊 SHAP Explainability</span>
+                        <span class="hero-pill">🩺 Clinical Decision Support</span>
+                    </div>
+                </div>
+            </div>
+            <div class="accent-line"></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_auth_highlights():
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>🦴 Bone Marrow Focus</h4>
+                <p>
+                    Designed around pediatric bone marrow transplant evaluation to make the purpose of the platform
+                    instantly clear when a visitor lands on the site.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>📈 Transparent Predictions</h4>
+                <p>
+                    The interface highlights prediction confidence and SHAP-based contributing factors so results
+                    remain readable and explainable.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <h4>👩‍⚕️ Multi-Role Experience</h4>
+                <p>
+                    Doctors, nurses, and general users each receive an interpretation adapted to their level of use.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_focus_banner():
+    st.markdown(
+        """
+        <div class="focus-banner">
+            <strong>BMT Insight:</strong> This application estimates pediatric bone marrow transplant outcome support
+            using clinical compatibility, disease context, and graft-related information.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def classify_survival_risk(survival_probability: float) -> str:
     if survival_probability >= 0.80:
         return "Very Low Risk"
-    elif survival_probability >= 0.65:
+    if survival_probability >= 0.65:
         return "Lower Risk"
-    elif survival_probability >= 0.45:
+    if survival_probability >= 0.45:
         return "Intermediate Risk"
-    elif survival_probability >= 0.25:
+    if survival_probability >= 0.25:
         return "Concerning Risk"
     return "High Risk"
 
@@ -263,11 +572,11 @@ def classify_survival_risk(survival_probability: float) -> str:
 def risk_color(survival_probability: float) -> str:
     if survival_probability >= 0.80:
         return "#1b9e77"
-    elif survival_probability >= 0.65:
+    if survival_probability >= 0.65:
         return "#4daf4a"
-    elif survival_probability >= 0.45:
+    if survival_probability >= 0.45:
         return "#ffb000"
-    elif survival_probability >= 0.25:
+    if survival_probability >= 0.25:
         return "#ff7f0e"
     return "#d62728"
 
@@ -293,7 +602,11 @@ def plot_probability_gauge(survival_probability: float):
             },
         )
     )
-    fig.update_layout(height=320, margin=dict(l=20, r=20, t=60, b=20))
+    fig.update_layout(
+        height=320,
+        margin=dict(l=20, r=20, t=60, b=20),
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
     return fig
 
 
@@ -306,52 +619,53 @@ def get_feature_names_from_pipeline(model):
         return None
 
 
-def clean_feature_name(name: str) -> str:
-    pretty_feature_names = {
-        "Recipientgender": "Recipient Gender",
-        "Stemcellsource": "Stem Cell Source",
-        "Donorage": "Donor Age",
-        "Gendermatch": "Gender Match",
-        "DonorABO": "Donor ABO",
-        "RecipientABO": "Recipient ABO",
-        "RecipientRh": "Recipient Rh",
-        "CMVstatus": "CMV Serostatus",
-        "DonorCMV": "Donor CMV",
-        "RecipientCMV": "Recipient CMV",
-        "Disease": "Disease Type",
-        "Riskgroup": "Risk Group",
-        "Diseasegroup": "Disease Group",
-        "HLAmatch": "HLA Match",
-        "HLAgrI": "HLA Group I",
-        "Recipientage": "Recipient Age",
-        "CD34kgx10d6": "CD34+ Cell Dose (10^6/kg)",
-        "Rbodymass": "Recipient Body Mass (kg)",
-        "age_gap": "Age Gap",
-        "donor_older": "Donor Older Than Recipient",
-        "donor_age_ratio": "Donor/Recipient Age Ratio",
-        "abo_mismatch": "ABO Mismatch",
-        "cmv_mismatch": "CMV Mismatch",
-        "hla_perfect_match": "Perfect HLA Match",
-        "hla_severe_mismatch": "Severe HLA Mismatch",
-        "cd34_bodymass_interaction": "CD34/Body Mass Interaction",
-        "recipient_age_group_engineered": "Recipient Age Group",
-        "donor_age_group_engineered": "Donor Age Group",
-    }
+PRETTY_FEATURE_NAMES = {
+    "Recipientgender": "Recipient Gender",
+    "Stemcellsource": "Stem Cell Source",
+    "Donorage": "Donor Age",
+    "Gendermatch": "Gender Match",
+    "DonorABO": "Donor ABO",
+    "RecipientABO": "Recipient ABO",
+    "RecipientRh": "Recipient Rh",
+    "CMVstatus": "CMV Serostatus",
+    "DonorCMV": "Donor CMV",
+    "RecipientCMV": "Recipient CMV",
+    "Disease": "Disease Type",
+    "Riskgroup": "Risk Group",
+    "Diseasegroup": "Disease Group",
+    "HLAmatch": "HLA Match",
+    "HLAgrI": "HLA Group I",
+    "Recipientage": "Recipient Age",
+    "CD34kgx10d6": "CD34+ Cell Dose (10^6/kg)",
+    "Rbodymass": "Recipient Body Mass (kg)",
+    "age_gap": "Age Gap",
+    "donor_older": "Donor Older Than Recipient",
+    "donor_age_ratio": "Donor/Recipient Age Ratio",
+    "abo_mismatch": "ABO Mismatch",
+    "cmv_mismatch": "CMV Mismatch",
+    "hla_perfect_match": "Perfect HLA Match",
+    "hla_severe_mismatch": "Severe HLA Mismatch",
+    "cd34_bodymass_interaction": "CD34/Body Mass Interaction",
+    "recipient_age_group_engineered": "Recipient Age Group",
+    "donor_age_group_engineered": "Donor Age Group",
+}
 
+
+def clean_feature_name(name: str) -> str:
     if name.startswith("num__"):
         raw = name.replace("num__", "")
-        return pretty_feature_names.get(raw, raw)
+        return PRETTY_FEATURE_NAMES.get(raw, raw)
 
     if name.startswith("cat__"):
         raw = name.replace("cat__", "")
-        for original in pretty_feature_names:
+        for original in PRETTY_FEATURE_NAMES:
             prefix = f"{original}_"
             if raw.startswith(prefix):
                 suffix = raw.replace(prefix, "")
-                return f"{pretty_feature_names.get(original, original)} = {suffix}"
-        return pretty_feature_names.get(raw, raw)
+                return f"{PRETTY_FEATURE_NAMES.get(original, original)} = {suffix}"
+        return PRETTY_FEATURE_NAMES.get(raw, raw)
 
-    return pretty_feature_names.get(name, name)
+    return PRETTY_FEATURE_NAMES.get(name, name)
 
 
 def get_shap_values(model, patient_data):
@@ -380,7 +694,6 @@ def get_shap_values(model, patient_data):
             patient_shap = np.array(shap_vals)[0]
 
         return np.array(patient_shap)
-
     except Exception:
         return None
 
@@ -406,6 +719,8 @@ def plot_shap_bar(top_effects):
     colors = ["green" if v > 0 else "red" for v in values]
 
     fig, ax = plt.subplots(figsize=(10, 5))
+    fig.patch.set_alpha(0)
+    ax.set_facecolor((1, 1, 1, 0.65))
     ax.barh(labels, values, color=colors)
     ax.axvline(0, color="black", linewidth=1)
     ax.set_xlabel("SHAP Value")
@@ -492,18 +807,44 @@ cmvstatus_options = [
 # AUTH UI
 # =========================================================
 def show_auth_screen():
-    st.markdown(
-        """
-        <div class="hero-box">
-            <h1>🩺 Pediatric BMT Survival Predictor</h1>
-            <p>
-                AI-assisted bone marrow transplant decision-support platform with
-                role-based interpretation for doctors, nurses, and the public.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    render_project_signature()
+    render_focus_banner()
+
+    stat_col1, stat_col2, stat_col3 = st.columns(3)
+    with stat_col1:
+        st.markdown(
+            """
+            <div class="mini-stat">
+                <div class="value">BMT</div>
+                <div class="label">Bone marrow transplant focus</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with stat_col2:
+        st.markdown(
+            """
+            <div class="mini-stat">
+                <div class="value">SHAP</div>
+                <div class="label">Explainable model behavior</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with stat_col3:
+        st.markdown(
+            """
+            <div class="mini-stat">
+                <div class="value">AI</div>
+                <div class="label">Clinical decision-support interface</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
+    render_auth_highlights()
+    st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 
     mode = st.radio(
         "Choose access mode",
@@ -512,8 +853,8 @@ def show_auth_screen():
     )
 
     if mode == "Login":
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Login")
-
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
@@ -527,10 +868,10 @@ def show_auth_screen():
                 st.rerun()
             else:
                 st.error("Invalid email or password.")
-
+        st.markdown("</div>", unsafe_allow_html=True)
     else:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Create Account")
-
         with st.form("signup_form"):
             full_name = st.text_input("Full Name")
             email = st.text_input("Email")
@@ -552,6 +893,12 @@ def show_auth_screen():
                 st.success(result["message"] + " You can now log in.")
             else:
                 st.error(result["message"])
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        "<p class='footer-note'>This interface is intended for educational and decision-support use, not as a replacement for medical judgment.</p>",
+        unsafe_allow_html=True,
+    )
 
 
 # =========================================================
@@ -566,7 +913,9 @@ def show_sidebar_inputs():
     recipient_abo = st.sidebar.selectbox("Recipient ABO", list(abo_map.keys()))
     recipient_rh = st.sidebar.selectbox("Recipient Rh", list(recipient_rh_map.keys()))
     recipient_cmv = st.sidebar.selectbox("Recipient CMV", list(cmv_binary_map.keys()))
-    recipient_body_mass = st.sidebar.number_input("Recipient Body Mass (kg)", min_value=1.0, max_value=150.0, value=25.0, step=1.0)
+    recipient_body_mass = st.sidebar.number_input(
+        "Recipient Body Mass (kg)", min_value=1.0, max_value=150.0, value=25.0, step=1.0
+    )
 
     st.sidebar.subheader("Donor Information")
     donor_age = st.sidebar.number_input("Donor Age", min_value=0.0, max_value=80.0, value=28.0, step=1.0)
@@ -619,8 +968,7 @@ def build_patient_dataframe(inputs: dict) -> pd.DataFrame:
     missing_cols = [col for col in model_columns if col not in patient_data.columns]
     if missing_cols:
         raise ValueError(
-            "Model/interface mismatch. Missing columns required by model: "
-            + ", ".join(missing_cols)
+            "Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols)
         )
 
     return patient_data[model_columns]
@@ -630,15 +978,8 @@ def show_main_app():
     user = st.session_state.user
     role = user["role"]
 
-    st.markdown(
-        f"""
-        <div class="hero-box">
-            <h1>🩺 Pediatric BMT Survival Predictor</h1>
-            <p><b>Logged in as:</b> {user['full_name']} | <b>Role:</b> {role.title()}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    render_project_signature(user=user)
+    render_focus_banner()
 
     topbar_col1, topbar_col2 = st.columns([8, 1])
     with topbar_col2:
@@ -692,7 +1033,7 @@ def show_main_app():
         with col1:
             st.markdown("### Patient Summary")
             summary_df = pd.DataFrame({
-                "Feature": patient_data.columns,
+                "Feature": [clean_feature_name(col) for col in patient_data.columns],
                 "Value": patient_data.iloc[0].values,
             })
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
@@ -719,8 +1060,7 @@ def show_main_app():
             if role == "doctor":
                 st.info(
                     "For clinicians: class interpretation is based on target coding "
-                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`."
-                )
+                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`.")
 
     with tabs[1]:
         st.markdown("### Role-Based Explanation")
@@ -761,7 +1101,6 @@ def show_main_app():
                 "Use this result as an aid for attention and monitoring priorities, not as a replacement "
                 "for physician judgment."
             )
-
         else:
             st.markdown("### How to Read This Result")
             st.write(
@@ -791,4 +1130,3 @@ if st.session_state.user is None:
     show_auth_screen()
 else:
     show_main_app()
-
