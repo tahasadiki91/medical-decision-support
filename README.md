@@ -71,88 +71,10 @@ Prompt engineering was highly useful for debugging technical issues and accelera
 
 ## DATA ANALYSIS :Feature Analysis and Selection for Survival Prediction
    
-   The dataset initially contains 36 features describing characteristics of the donor, recipient, transplant procedure, and     post-transplant clinical outcomes. The goal of the analysis is to determine which variables should be used to maximize       the predictive performance of a survival prediction model, while avoiding redundancy, noise, and information leakage.
-   
-   To achieve this, several preprocessing and feature-selection steps were applied.
-   
-   1. Removing Post-Transplant Variables (Data Leakage)
+We initially started with 36 features describing donor and recipient characteristics, the transplant procedure, and post-transplant clinical outcomes. To build a robust predictive model, our goal was to maximize performance while actively eliminating noise, redundancy, and information leakage.
+Here is the step-by-step preprocessing strategy we applied:
 
-   
-   2. Removing Redundant Variables
-      Several variables describe the same biological information in different formats. Keeping all of them would introduce         redundancy and multicollinearity, which can negatively affect the stability of machine learning models. Examples             include:
-   
-      Donor age variables:
-   
-      Donorage (continuous age)
-   
-      Donorage35 (binary threshold at 35 years)
-   
-      Action: Since the binary variable is directly derived from the continuous one, the continuous variable was preferred         and the derived variable can be removed.
-   
-      Recipient age variables:
-   
-      Recipientage (continuous)
-   
-      Recipientage10 (binary threshold)
-   
-      Recipientageint (age intervals)
-   
-      Action: These three variables encode the same information. The continuous variable Recipientage contains the most            detail     and therefore is retained.
-   
-   3. Removing Derived Compatibility Variables
-      Some compatibility indicators are calculated directly from other variables. Examples include:
-   
-      ABO compatibility: DonorABO, RecipientABO, and ABOmatch. Since ABOmatch is derived from the donor and recipient blood        groups, it becomes redundant if both groups are already included.
-   
-      HLA compatibility: Several variables describe the same immunological compatibility (HLAmatch, HLAmismatch, Antigen,          Allele, HLAgrI). These represent different ways of quantifying the mismatch between donor and recipient HLA markers.         Because they are highly correlated, typically one detailed representation (such as HLAmatch or HLAgrI) is sufficient.
-   
-   4. Handling Variables with Missing Values
-       Some variables contain missing data: RecipientABO, RecipientRh, CMVstatus, DonorCMV, RecipientCMV, Antigen, Allele,          extcGvHD, CD3dCD34, CD3dkgx10d8, and Rbodymass.
-   
-      When the proportion of missing values is high, the reliability of these features decreases. They can either be imputed       or removed depending on the preprocessing strategy.
-   
-   5. Reducing Highly Correlated Biological Variables
-      Certain variables describe related biological quantities and are strongly correlated. Examples include:
-   
-      CD34kgx10d6: dose of CD34+ stem cells
-   
-      CD3dCD34: ratio between CD3+ and CD34+ cells
-   
-      CD3dkgx10d8: dose of CD3+ cells
-   
-      Because these variables measure similar immunological characteristics, keeping all of them may introduce redundancy.         Typically, one representative variable such as CD34kgx10d6 is retained.
-   
-   6. Selecting Clinically Relevant Predictors
-      After removing post-event variables, redundant features, and variables with excessive missing data, the remaining            features represent clinically meaningful predictors available before transplantation. The most informative predictors        typically include:
-   
-      Recipientage: recipient age at transplantation
-   
-      Donorage: donor age
-   
-      Riskgroup: disease risk classification
-   
-      Disease / Diseasegroup: type of hematological disease
-    
-      HLAmatch / HLAgrI: immunological compatibility between donor and recipient
-   
-      Stemcellsource: source of hematopoietic stem cells
-    
-      CD34kgx10d6: transplanted stem cell dose
-   
-      Gendermatch: donor-recipient gender compatibility
-   
-      CMVstatus: cytomegalovirus serological compatibility (if data quality allows)
-   
-      These features represent biologically plausible factors influencing transplantation outcomes, making them appropriate        predictors for survival estimation.
-   
-Conclusion
+1.	Preventing Data Leakage (Post-Transplant Variables) We strictly removed all variables that recorded events occurring after the transplant (e.g., acute GvHD, survival time). Keeping them would introduce severe data leakage, allowing the model to "cheat" by looking at future outcomes rather than predicting from pre-transplant conditions.
+2.	Removing Redundant Variables Several features described the exact same biological information but in different formats. Keeping them all would introduce multicollinearity.
+ 	Age variables: We had continuous age ( Donorage , Recipientage ) and binned thresholds ( Donorage35 , Recipientage10 , Recipientageint ). We kept the continuous variables because they contain the most precise detail, and we dropped the derived categorical ones.
 
-   The feature selection process aimed to construct a robust predictive model by:
-   
-   Removing variables that occur after transplantation to prevent data leakage.
-   
-   Eliminating redundant or derived variables that encode the same information.
-   
-   Handling variables with missing values.
-   
-   Reducing highly correlated biological variables
