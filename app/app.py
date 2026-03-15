@@ -10,15 +10,17 @@ import shap
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
+# Needed for joblib model deserialization if the pipeline contains this custom transformer
+from src.feature_engineering import ClinicalFeatureEngineer  # noqa: F401
+from src.auth import ensure_db, create_user, authenticate_user
+from src.explanations import generate_role_based_explanation
+
 # =========================================================
 # FORCE PROJECT ROOT INTO PYTHON PATH
 # =========================================================
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.auth import ensure_db, create_user, authenticate_user
-from src.explanations import generate_role_based_explanation
 
 # =========================================================
 # PAGE CONFIG
@@ -27,7 +29,7 @@ st.set_page_config(
     page_title="Pediatric BMT Survival Predictor",
     page_icon="🩺",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # =========================================================
@@ -60,14 +62,11 @@ ensure_db()
 def load_artifacts():
     missing_files = [str(p) for p in [MODEL_PATH, COLUMNS_PATH, INFO_PATH] if not p.exists()]
     if missing_files:
-        raise FileNotFoundError(
-            "Missing required model files:\n" + "\n".join(missing_files)
-        )
+        raise FileNotFoundError("Missing required model files:\n" + "\n".join(missing_files))
 
     model = joblib.load(MODEL_PATH)
     model_columns = joblib.load(COLUMNS_PATH)
     model_info = joblib.load(INFO_PATH)
-
     return model, model_columns, model_info
 
 
@@ -81,10 +80,12 @@ except Exception as e:
 # CSS / STYLING
 # =========================================================
 def load_css():
+    # Load external CSS first if present
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+    # Force a readable theme on top
     st.markdown(
         """
         <style>
@@ -173,11 +174,14 @@ def load_css():
             box-shadow: none !important;
         }
 
-        div[data-baseweb="select"] * {
+        div[data-baseweb="select"] > div > div {
             color: #ffffff !important;
         }
 
-        div[data-baseweb="select"] input {
+        div[data-baseweb="select"] input,
+        div[data-baseweb="select"] span,
+        div[data-baseweb="select"] p,
+        div[data-baseweb="select"] div {
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
         }
@@ -186,8 +190,11 @@ def load_css():
             fill: #ffffff !important;
         }
 
-        /* Open dropdown menu */
-        div[data-baseweb="popover"] {
+        /* Open dropdown menu + all options */
+        [data-baseweb="popover"],
+        [data-baseweb="menu"],
+        div[role="listbox"] {
+            background: #0b1220 !important;
             color: #ffffff !important;
         }
 
@@ -198,31 +205,37 @@ def load_css():
             color: #ffffff !important;
         }
 
-        ul[role="listbox"] li,
-        div[role="option"] {
-            background: #0b1220 !important;
+        ul[role="listbox"] *,
+        div[role="option"],
+        div[role="option"] *,
+        li[role="option"],
+        li[role="option"] * {
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
 
-        ul[role="listbox"] li *,
-        div[role="option"] * {
-            color: #ffffff !important;
+        ul[role="listbox"] li,
+        div[role="option"],
+        li[role="option"] {
+            background: #0b1220 !important;
         }
 
         ul[role="listbox"] li:hover,
-        div[role="option"]:hover {
+        div[role="option"]:hover,
+        li[role="option"]:hover {
             background: #1f2937 !important;
             color: #ffffff !important;
         }
 
         ul[role="listbox"] li[aria-selected="true"],
-        div[role="option"][aria-selected="true"] {
+        div[role="option"][aria-selected="true"],
+        li[role="option"][aria-selected="true"] {
             background: #374151 !important;
             color: #ffffff !important;
             font-weight: 600 !important;
         }
 
-        /* Number inputs */
+        /* Number inputs remain light and readable */
         div[data-testid="stNumberInput"] {
             background: #f7fbff !important;
             border: 1px solid #9fbcd3 !important;
@@ -303,7 +316,7 @@ def load_css():
             padding: 0.6rem !important;
         }
 
-        /* Code blocks */
+        /* Code / json / pre */
         pre, code, .stCodeBlock, [data-testid="stCodeBlock"] {
             background: #f7fbff !important;
             color: #102a43 !important;
@@ -419,9 +432,9 @@ def plot_probability_gauge(survival_probability: float):
     return fig
 
 
-def get_feature_names_from_pipeline(model):
+def get_feature_names_from_pipeline(model_obj):
     try:
-        base_estimator = model.estimator if hasattr(model, "estimator") else model
+        base_estimator = model_obj.estimator if hasattr(model_obj, "estimator") else model_obj
         preprocessor = base_estimator.named_steps["preprocessor"]
         return preprocessor.get_feature_names_out()
     except Exception:
@@ -476,9 +489,9 @@ def clean_feature_name(name: str) -> str:
     return pretty_feature_names.get(name, name)
 
 
-def get_shap_values(model, patient_data):
+def get_shap_values(model_obj, patient_data):
     try:
-        base_estimator = model.estimator if hasattr(model, "estimator") else model
+        base_estimator = model_obj.estimator if hasattr(model_obj, "estimator") else model_obj
         preprocessor = base_estimator.named_steps["preprocessor"]
         classifier = base_estimator.named_steps["classifier"]
 
@@ -505,9 +518,9 @@ def get_shap_values(model, patient_data):
         return None
 
 
-def explain_top_effects(model, patient_data, top_n=8):
-    shap_values = get_shap_values(model, patient_data)
-    feature_names = get_feature_names_from_pipeline(model)
+def explain_top_effects(model_obj, patient_data, top_n=8):
+    shap_values = get_shap_values(model_obj, patient_data)
+    feature_names = get_feature_names_from_pipeline(model_obj)
 
     if shap_values is None or feature_names is None:
         return []
@@ -634,7 +647,6 @@ def show_auth_screen():
 
     if mode == "Login":
         st.subheader("Login")
-
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
@@ -650,7 +662,6 @@ def show_auth_screen():
                 st.error("Invalid email or password.")
     else:
         st.subheader("Create Account")
-
         with st.form("signup_form"):
             full_name = st.text_input("Full Name")
             email = st.text_input("Email")
@@ -734,13 +745,9 @@ def show_sidebar_inputs():
 
 def build_patient_dataframe(inputs: dict) -> pd.DataFrame:
     patient_data = pd.DataFrame([inputs])
-
     missing_cols = [col for col in model_columns if col not in patient_data.columns]
     if missing_cols:
-        raise ValueError(
-            "Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols)
-        )
-
+        raise ValueError("Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols))
     return patient_data[model_columns]
 
 
@@ -815,15 +822,11 @@ def show_main_app():
 
         with col1:
             st.markdown("### Patient Summary")
-            summary_df = pd.DataFrame({
-                "Feature": patient_data.columns,
-                "Value": patient_data.iloc[0].values,
-            })
+            summary_df = pd.DataFrame({"Feature": patient_data.columns, "Value": patient_data.iloc[0].values})
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
         with col2:
             st.markdown("### Prediction Result")
-
             m1, m2, m3 = st.columns(3)
             with m1:
                 st.metric("Survival Probability", f"{survival_probability:.1%}")
@@ -843,8 +846,7 @@ def show_main_app():
             if role == "doctor":
                 st.info(
                     "For clinicians: class interpretation is based on target coding "
-                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`."
-                )
+                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`.")
 
     with tabs[1]:
         st.markdown("### Role-Based Explanation")
@@ -889,7 +891,6 @@ def show_main_app():
                 "Use this result as an aid for attention and monitoring priorities, not as a replacement "
                 "for physician judgment."
             )
-
         else:
             st.markdown("### How to Read This Result")
             st.write(
