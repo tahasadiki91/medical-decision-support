@@ -90,7 +90,7 @@ Clinical Profile: Riskgroup , Diseasegroup
 
 Compatibility: HLAmatch (or HLAgrI ), Gendermatch , CMVstatus
 
- 	Transplant Details: Stemcellsource , CD34kgx10d6
+ Transplant Details: Stemcellsource , CD34kgx10d6
 
 These represent biologically plausible factors that influence transplantation outcomes, making them the perfect inputs for our survival estimation model.
 
