@@ -8,7 +8,7 @@ A decision-support application developed to assist physicians in predicting the 
 
 > **Goal:** predict pediatric bone marrow transplant survival using an explainable ML pipeline.
 >
-> **Best model:** **Random Forest**
+> **Best model in the deployed app:** **XGBoost**
 >
 > **Main strengths:** class-imbalance handling, SHAP interpretability, reproducible workflow, physician-oriented interface.
 
@@ -16,7 +16,7 @@ A decision-support application developed to assist physicians in predicting the 
 flowchart LR
     A[Dataset] --> B[Preprocessing]
     B --> C[Model Comparison]
-    C --> D[Random Forest Final Model]
+    C --> D[XGBoost Final Model]
     D --> E[SHAP Explanation]
     E --> F[Streamlit App]
 ```
@@ -49,30 +49,6 @@ Our target variable is **`survival_status`**.
 
 ---
 
-## Task Management (Trello)
-
-To manage team coordination and track the project workflow, we used Trello as recommended in the project brief.
-
-**Trello board:** [Health Project Board](https://trello.com/invite/b/69aecd8a77da1cab8b19330c/ATTIbeffe79b3bda32c3e5ff6dac11a00f5729779811/health)
-
-The board was used to organize and monitor tasks such as:
-- data preprocessing,
-- class imbalance handling,
-- model training and comparison,
-- SHAP integration,
-- Streamlit interface development,
-- README writing and final review.
-
-We tracked progress using a simple workflow:
-- **To Do**
-- **In Progress**
-- **Review**
-- **Done**
-
-This helped make responsibilities clear and kept the project traceable from start to finish.
-
----
-
 ## Class Balance
 
 The dataset is **moderately imbalanced**, with about **60% survival** and **40% non-survival** cases.
@@ -96,15 +72,26 @@ This choice improved the reliability of **precision**, **recall**, **F1-score**,
 
 ## Best Model and Performance
 
-After preprocessing the data and removing leakage features, **Random Forest** emerged as the best-performing model on the leakage-free dataset.
+According to the **deployed application metrics**, the final selected model loaded in the app is **XGBoost**.
 
-### Final Metrics
+### Final Metrics Shown in the App
 
-| Model | Accuracy | ROC-AUC | Precision | Recall | F1-Score |
-|------|----------|---------|-----------|--------|----------|
-| **Random Forest** | **0.947** | **0.968** | **1.000** | **0.882** | **0.938** |
-| XGBoost | 0.895 | 0.964 | 0.882 | 0.882 | 0.882 |
-| SVM | 0.526 | 0.759 | 0.455 | 0.294 | 0.357 |
+| Model | Test Accuracy | Test ROC-AUC | Final CV ROC-AUC Mean | Final CV ROC-AUC Std |
+|------|---------------:|-------------:|----------------------:|---------------------:|
+| **XGBoost** | **0.5795** | **0.5798** | **0.5883** | **0.0442** |
+
+### Exact Values Used by the App
+
+- **Best Model:** `xgboost`
+- **Test Accuracy:** `0.5794736842105263`
+- **Test ROC-AUC:** `0.5798139327731093`
+- **Final CV ROC-AUC Mean:** `0.5883473389355741`
+- **Final CV ROC-AUC Std:** `0.0441971539150304`
+- **Target Meaning:** `{0: 'alive', 1: 'dead'}`
+
+### Important Note
+
+Earlier README drafts contained larger metrics from a different version of the workflow. To keep the documentation consistent with the **current deployed app**, this README now reports the values actually shown in the application interface.
 
 ### Visuals
 
@@ -112,9 +99,9 @@ After preprocessing the data and removing leakage features, **Random Forest** em
 
 ![ROC Curve](assets/roc_curve.png)
 
-### Why Random Forest?
+### Why XGBoost?
 
-Random Forest achieved the strongest overall performance on the leakage-free dataset. It provided the best balance between discrimination ability, precision, recall, and robustness on tabular clinical data.
+In the deployed version of the project, **XGBoost** is the model selected and loaded by the application. It was chosen because gradient boosting can capture nonlinear clinical relationships effectively while remaining compatible with the final deployment pipeline.
 
 ### Why ROC-AUC?
 
@@ -169,7 +156,7 @@ We initially started with **36 features** describing donor and recipient charact
 
 ## Correlation Analysis
 
-This section is designed to be understood **visually first**, especially for readers who want to grasp the preprocessing logic quickly.
+This is the section designed to be understood **visually first**, without needing to read long paragraphs.
 
 ### Correlation Heatmap
 
@@ -229,6 +216,26 @@ A more robust SHAP plotting block compatible with different SHAP outputs.
 
 **Insight:**  
 Iterative prompting was especially effective for solving version-related debugging issues.
+
+---
+
+## Task Management (Trello)
+
+To organize the project workflow, we used a Trello board to track team progress and distribute responsibilities across the main stages of the project:
+- Data preprocessing
+- Model training
+- SHAP analysis
+- Interface development
+- Documentation and testing
+
+**Trello board:**  
+`https://trello.com/invite/b/69aecd8a77da1cab8b19330c/ATTIbeffe79b3bda32c3e5ff6dac11a00f5729779811/health`
+
+The board was structured around the following progress columns:
+- **To Do**
+- **In Progress**
+- **Review**
+- **Done**
 
 ---
 
