@@ -16,8 +16,9 @@ This project is fully reproducible. To run the application locally, follow these
    streamlit run app/app.py
 
 ## Critical Analysis & Findings:
-
-  ##   1.   Handling Class Imbalance
+## 1. Dataset balanced 
+The dataset was not perfectly balanced, but it showed a moderate class imbalance, with about 60% of the samples corresponding to survived patients and 40% to non-survived patients. This imbalance can affect the performance of machine learning models because the algorithm may tend to favor the majority class. To reduce this effect, we applied class weight adjustment, which gives more importance to the minority class during training so that the model can learn both classes more effectively.
+  ##   2.   Handling Class Imbalance
 The dataset is moderately imbalanced (about 60% survival vs 40% non-survival). Instead of generating synthetic data with SMOTE or dropping data via undersampling, we decided to use class-weight adjustment.
 By penalizing the model more heavily for misclassifying the minority class, we kept the original dataset intact. This approach gave us a solid balance between precision and recall, which is crucial for medical predictions where missing a high-risk case is problematic.
 
