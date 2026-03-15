@@ -98,41 +98,98 @@ except Exception as e:
 # CSS / STYLING
 # =========================================================
 def load_css():
+    # Load project CSS first when it exists
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    else:
-        st.markdown(
-            """
-            <style>
-            .main {
-                background: linear-gradient(135deg, #eaf4ff 0%, #f9fcff 100%);
-            }
-            .hero-box {
-                background: rgba(255,255,255,0.88);
-                border: 1px solid #d8e6f3;
-                border-radius: 18px;
-                padding: 1.2rem;
-                margin-bottom: 1rem;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-            }
-            .role-card {
-                background: rgba(255,255,255,0.93);
-                border: 1px solid #dde8f2;
-                border-radius: 16px;
-                padding: 1rem;
-                margin-bottom: 1rem;
-            }
-            .metric-card {
-                background: rgba(255,255,255,0.95);
-                border: 1px solid #e3ebf3;
-                border-radius: 16px;
-                padding: 1rem;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+
+    # Then force a readable medical theme override
+    st.markdown(
+        """
+        <style>
+        .stApp, .main {
+            color: #102a43;
+        }
+
+        .main {
+            background: linear-gradient(135deg, #dcebf5 0%, #c9dceb 55%, #b8d1e3 100%);
+        }
+
+        .hero-box {
+            background: rgba(241, 247, 251, 0.94);
+            border: 1px solid #b7cede;
+            border-radius: 18px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 24px rgba(16, 42, 67, 0.08);
+            color: #102a43;
+        }
+
+        .role-card {
+            background: rgba(236, 244, 249, 0.95);
+            border: 1px solid #bfd3e1;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #102a43;
+        }
+
+        .metric-card {
+            background: rgba(230, 240, 247, 0.96);
+            border: 1px solid #b7cede;
+            border-radius: 16px;
+            padding: 1rem;
+            color: #102a43;
+        }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #d7e6f0 0%, #c4d8e7 100%);
+        }
+
+        [data-testid="stHeader"] {
+            background: rgba(215, 230, 240, 0.75);
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background-color: rgba(236, 244, 249, 0.85);
+            border-radius: 10px 10px 0 0;
+            color: #102a43;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background-color: rgba(201, 220, 235, 0.95);
+            color: #0b2239;
+            font-weight: 600;
+        }
+
+        .stButton > button,
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, #4f8fbf 0%, #3f78a5 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+
+        .stButton > button:hover,
+        .stDownloadButton > button:hover {
+            border: none;
+            color: white;
+            filter: brightness(1.05);
+        }
+
+        .stDataFrame, div[data-testid="stMetric"], div[data-testid="stAlert"],
+        div[data-testid="stForm"], div[data-testid="stExpander"] {
+            background-color: rgba(243, 248, 252, 0.88);
+            border-radius: 14px;
+        }
+
+        h1, h2, h3, h4, h5, h6, p, label, div, span {
+            color: #102a43;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 load_css()
@@ -162,7 +219,7 @@ def set_background_from_asset():
             <style>
             .stApp {{
                 background-image:
-                    linear-gradient(rgba(240,248,255,0.80), rgba(248,252,255,0.88)),
+                    linear-gradient(rgba(220, 235, 245, 0.88), rgba(184, 209, 227, 0.92)),
                     url("data:image/{ext};base64,{encoded}");
                 background-size: cover;
                 background-position: center;
@@ -170,18 +227,18 @@ def set_background_from_asset():
             }}
             </style>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
     else:
         st.markdown(
             """
             <style>
             .stApp {
-                background: linear-gradient(135deg, #eef7ff 0%, #ffffff 100%);
+                background: linear-gradient(135deg, #dcebf5 0%, #c9dceb 55%, #b8d1e3 100%);
             }
             </style>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
 
