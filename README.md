@@ -22,30 +22,26 @@ The dataset is moderately imbalanced (about 60% survival vs 40% non-survival). I
 By penalizing the model more heavily for misclassifying the minority class, we kept the original dataset intact. This approach gave us a solid balance between precision and recall, which is crucial for medical predictions where missing a high-risk case is problematic.
 
 
-3. Which ML model performed best? Provide performance metrics.
-     After cleaning the data to remove any target leakage and ensuring our model is honest, XGBoost provided the best             results.
+## 2.	Best Model and Performance Metrics
+After preprocessing the data and dropping features that would cause data leakage, XGBoost
+emerged as our best performing model.
 
-    Here are our performance metrics:
- 
-   ROC-AUC: 0.745 for XGBoost (compared to 0.732 for Random Forest)
+Metrics:
 
-   Accuracy: 76.3% (for both)
- 
-   F1-Score: 0.727 (for both)
+•	ROC-AUC: 0.745 (vs 0.732 for Random Forest)
 
-     Precision: 0.750 (for both)
-   
-     Difference between Random Forest and XGBoost:
-     Both models use "decision trees", but their learning methods are different:
-   
-     Random Forest: It builds many trees at the same time, completely independently. To make a prediction, all the trees          "vote"   and the majority wins. It is very robust, but the trees do not learn from each other.
-   
-     XGBoost: 
-     It builds trees one after the other. Each new tree is created specifically to correct the mistakes of the previous one.      Since it learns from its errors step by step, it can often understand complex relationships in medical data better,          which    explains why it performed slightly better here.
+•	Accuracy: 76.3%
 
-     Why use ROC-AUC?
-       
-      Even though both models have the same overall accuracy of 76.3%, we chose XGBoost because of its higher ROC-AUC score.       Accuracy simply calculates the percentage of correct answers at a fixed threshold (for example, 50% probability). ROC-       AUC, on the other hand, evaluates the model's overall ability to separate the two groups (patients who survive and           those     who do not), regardless of the chosen threshold. In medicine, this is a much more important metric because         it proves         that the model can fundamentally distinguish between a high-risk profile and a safe one.
+•	Precision: 0.750
+
+•	Recall: 0.705
+
+•	F1-Score: 0.727
+
+## Why XGBoost? 
+While Random Forest builds trees independently, XGBoost builds them sequentially, actively learning from the mistakes of previous trees. This helped it capture the complex medical relationships in our dataset a bit better.
+## Why ROC-AUC? 
+We prioritized ROC-AUC over raw accuracy. Accuracy just gives a percentage at a fixed threshold, but ROC-AUC evaluates the model's fundamental ability to separate survivors from non-survivors. In a clinical setting with imbalanced data, this is a much more reliable metric.
 
 3. Which medical features most influenced predictions (SHAP results)?
   After removing post-transplant variables to prevent data leakage, SHAP analysis showed that the most influential features were clinically meaningful pre-transplant predictors, including risk group, recipient age, donor age, HLA compatibility, stem cell source, disease category, gender match, CMV status, and CD34+ cell dose. These features are medically plausible because they reflect the patient profile, donor-recipient compatibility, and transplant characteristics known before the procedure.
