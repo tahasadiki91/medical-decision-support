@@ -43,8 +43,26 @@ While Random Forest builds trees independently, XGBoost builds them sequentially
 ## Why ROC-AUC? 
 We prioritized ROC-AUC over raw accuracy. Accuracy just gives a percentage at a fixed threshold, but ROC-AUC evaluates the model's fundamental ability to separate survivors from non-survivors. In a clinical setting with imbalanced data, this is a much more reliable metric.
 
-3. Which medical features most influenced predictions (SHAP results)?
-  After removing post-transplant variables to prevent data leakage, SHAP analysis showed that the most influential features were clinically meaningful pre-transplant predictors, including risk group, recipient age, donor age, HLA compatibility, stem cell source, disease category, gender match, CMV status, and CD34+ cell dose. These features are medically plausible because they reflect the patient profile, donor-recipient compatibility, and transplant characteristics known before the procedure.
+## 3.	Most Influential Features (SHAP)
+Based on our SHAP summary plots, the most critical pre-transplant predictors are:
+
+•	Risk group
+ 
+•	Recipient age & Donor age
+
+•	HLA compatibility
+
+•	Stem cell source
+
+•	Disease category
+
+•	Gender match
+
+•	CMV status
+
+•	CD34+ cell dose
+These results make clinical sense, as they are all standard risk factors and compatibility metrics that physicians evaluate before authorizing a transplant.
+
 
 4. What insights did prompt engineering provide for your selected task?
   Prompt engineering was highly useful for debugging technical issues and accelerating preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve handling of missing values and formatting issues. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw.arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
