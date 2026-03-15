@@ -83,6 +83,30 @@ ABO compatibility: ABOmatch is completely derived from DonorABO and RecipientABO
  	HLA compatibility: We had multiple features representing the same immunological mismatch ( HLAmatch , HLAmismatch , Antigen , Allele , HLAgrI ). We selected one detailed representation for HLA and dropped the rest to stabilize the model.
 4.	Handling Missing Values Several variables contained missing data (e.g., RecipientABO , CMVstatus , CD3dCD34 ). We evaluated the proportion of missing values for each: features with an overwhelmingly high percentage of missing data were dropped because they were unreliable. For the remaining features, we imputed the missing values so we wouldn't have to discard valuable patient records.
 5.	Reducing Highly Correlated Biological Data Certain variables measured very similar immunological characteristics. For example, the dose of CD34+ cells ( CD34kgx10d6 ), the dose of CD3+ cells ( CD3dkgx10d8 ), and their ratio ( CD3dCD34 ) were highly correlated. To avoid redundancy, we retained CD34kgx10d6 as our primary representative feature.
+
+
+## 5. Correlation Analysis
+
+We computed a correlation matrix on the numerical features to identify redundancy before model training.
+
+### Most Correlated Feature Pairs
+- `aGvHDIIIIV` ↔ `time_to_aGvHD_III_IV` : **0.969**
+- `HLAmatch` ↔ `HLAgrI` : **0.947**
+- `Recipientageint` ↔ `Recipientage` : **0.917**
+- `Allele` ↔ `HLAmatch` : **0.904**
+
+### Interpretation
+These results indicate that several variables encode very similar information. Instead of keeping all correlated variables equally, we used this analysis to highlight potential redundancy and guide feature-selection decisions.
+
+### Impact on the project
+- simpler and cleaner feature space
+- lower redundancy between predictors
+- better interpretability
+- more reliable downstream explanation of model behavior
+
+> See `notebooks/eda.ipynb` for the complete correlation matrix, visualization, and full preprocessing logic.
+
+
 ## Conclusion & Final Predictors
 Through this feature selection process, we reduced the dataset to the most clinically relevant pre-transplant predictors. The final set of features includes:
 
