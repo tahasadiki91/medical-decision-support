@@ -10,15 +10,20 @@ import shap
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-# Needed for joblib model deserialization if the pipeline contains this custom transformer
-from src.feature_engineering import ClinicalFeatureEngineer  # noqa: F401
-from src.auth import ensure_db, create_user, authenticate_user
-from src.explanations import generate_role_based_explanation
+# =========================================================
+# SAFE PROJECT ROOT DISCOVERY
+# =========================================================
+CURRENT_FILE = Path(__file__).resolve()
 
-# =========================================================
-# FORCE PROJECT ROOT INTO PYTHON PATH
-# =========================================================
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = None
+for parent in [CURRENT_FILE.parent] + list(CURRENT_FILE.parents):
+    if (parent / "src").exists():
+        PROJECT_ROOT = parent
+        break
+
+if PROJECT_ROOT is None:
+    PROJECT_ROOT = CURRENT_FILE.parent.parent
+
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -31,6 +36,18 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# =========================================================
+# SAFE IMPORTS FROM src/
+# =========================================================
+MODULE_IMPORT_ERROR = None
+try:
+    # Needed both for app logic and, potentially, model unpickling.
+    from src.feature_engineering import ClinicalFeatureEngineer  # noqa: F401
+    from src.auth import ensure_db, create_user, authenticate_user
+    from src.explanations import generate_role_based_explanation
+except Exception as e:
+    MODULE_IMPORT_ERROR = e
 
 # =========================================================
 # PATHS
@@ -51,51 +68,23 @@ if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "login"
 
 # =========================================================
-# INIT DB
-# =========================================================
-ensure_db()
-
-# =========================================================
-# LOAD MODEL
-# =========================================================
-@st.cache_resource
-def load_artifacts():
-    missing_files = [str(p) for p in [MODEL_PATH, COLUMNS_PATH, INFO_PATH] if not p.exists()]
-    if missing_files:
-        raise FileNotFoundError("Missing required model files:\n" + "\n".join(missing_files))
-
-    model = joblib.load(MODEL_PATH)
-    model_columns = joblib.load(COLUMNS_PATH)
-    model_info = joblib.load(INFO_PATH)
-    return model, model_columns, model_info
-
-
-try:
-    model, model_columns, model_info = load_artifacts()
-except Exception as e:
-    st.error(f"Failed to load model artifacts: {e}")
-    st.stop()
-
-# =========================================================
-# CSS / STYLING
+# GLOBAL STYLING
 # =========================================================
 def load_css():
-    # Load external CSS first if present
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    # Force a readable theme on top
     st.markdown(
         """
         <style>
         .stApp {
-            color: #0f2740 !important;
+            color: #102a43 !important;
         }
 
         .main {
             background: transparent !important;
-            color: #0f2740 !important;
+            color: #102a43 !important;
         }
 
         [data-testid="stHeader"] {
@@ -108,7 +97,7 @@ def load_css():
         }
 
         section[data-testid="stSidebar"] * {
-            color: #0f2740 !important;
+            color: #102a43 !important;
         }
 
         .hero-box {
@@ -174,27 +163,20 @@ def load_css():
             box-shadow: none !important;
         }
 
-        div[data-baseweb="select"] > div > div {
+        div[data-baseweb="select"] * {
             color: #ffffff !important;
         }
 
-        div[data-baseweb="select"] input,
-        div[data-baseweb="select"] span,
-        div[data-baseweb="select"] p,
-        div[data-baseweb="select"] div {
+        div[data-baseweb="select"] input {
             color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
         }
 
         div[data-baseweb="select"] svg {
             fill: #ffffff !important;
         }
 
-        /* Open dropdown menu + all options */
-        [data-baseweb="popover"],
-        [data-baseweb="menu"],
-        div[role="listbox"] {
-            background: #0b1220 !important;
+        /* Dropdown panel */
+        div[data-baseweb="popover"] {
             color: #ffffff !important;
         }
 
@@ -205,37 +187,36 @@ def load_css():
             color: #ffffff !important;
         }
 
-        ul[role="listbox"] *,
-        div[role="option"],
-        div[role="option"] *,
-        li[role="option"],
-        li[role="option"] * {
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-        }
-
         ul[role="listbox"] li,
         div[role="option"],
-        li[role="option"] {
+        [role="option"] {
             background: #0b1220 !important;
+            color: #ffffff !important;
+        }
+
+        ul[role="listbox"] li *,
+        div[role="option"] *,
+        [role="option"] * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
         }
 
         ul[role="listbox"] li:hover,
         div[role="option"]:hover,
-        li[role="option"]:hover {
+        [role="option"]:hover {
             background: #1f2937 !important;
             color: #ffffff !important;
         }
 
         ul[role="listbox"] li[aria-selected="true"],
         div[role="option"][aria-selected="true"],
-        li[role="option"][aria-selected="true"] {
+        [role="option"][aria-selected="true"] {
             background: #374151 !important;
             color: #ffffff !important;
             font-weight: 600 !important;
         }
 
-        /* Number inputs remain light and readable */
+        /* Number inputs */
         div[data-testid="stNumberInput"] {
             background: #f7fbff !important;
             border: 1px solid #9fbcd3 !important;
@@ -329,11 +310,6 @@ def load_css():
     )
 
 
-load_css()
-
-# =========================================================
-# OPTIONAL MEDICAL BACKGROUND
-# =========================================================
 def set_background_from_asset():
     possible_files = [
         BASE_DIR / "app" / "assets" / "background.jpg",
@@ -378,7 +354,44 @@ def set_background_from_asset():
         )
 
 
+load_css()
 set_background_from_asset()
+
+# =========================================================
+# HELPFUL STARTUP ERRORS
+# =========================================================
+if MODULE_IMPORT_ERROR is not None:
+    st.error(
+        "Could not import your local 'src' package. Make sure your project is opened from the repository root and that you have this structure: src/, app/, models/, requirements.txt."
+    )
+    st.code(str(MODULE_IMPORT_ERROR))
+    st.stop()
+
+# =========================================================
+# INIT DB
+# =========================================================
+ensure_db()
+
+# =========================================================
+# LOAD MODEL
+# =========================================================
+@st.cache_resource
+def load_artifacts():
+    missing_files = [str(p) for p in [MODEL_PATH, COLUMNS_PATH, INFO_PATH] if not p.exists()]
+    if missing_files:
+        raise FileNotFoundError("Missing required model files:\n" + "\n".join(missing_files))
+
+    model = joblib.load(MODEL_PATH)
+    model_columns = joblib.load(COLUMNS_PATH)
+    model_info = joblib.load(INFO_PATH)
+    return model, model_columns, model_info
+
+
+try:
+    model, model_columns, model_info = load_artifacts()
+except Exception as e:
+    st.error(f"Failed to load model artifacts: {e}")
+    st.stop()
 
 # =========================================================
 # HELPERS
@@ -647,6 +660,7 @@ def show_auth_screen():
 
     if mode == "Login":
         st.subheader("Login")
+
         with st.form("login_form"):
             email = st.text_input("Email")
             password = st.text_input("Password", type="password")
@@ -660,8 +674,10 @@ def show_auth_screen():
                 st.rerun()
             else:
                 st.error("Invalid email or password.")
+
     else:
         st.subheader("Create Account")
+
         with st.form("signup_form"):
             full_name = st.text_input("Full Name")
             email = st.text_input("Email")
@@ -745,9 +761,13 @@ def show_sidebar_inputs():
 
 def build_patient_dataframe(inputs: dict) -> pd.DataFrame:
     patient_data = pd.DataFrame([inputs])
+
     missing_cols = [col for col in model_columns if col not in patient_data.columns]
     if missing_cols:
-        raise ValueError("Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols))
+        raise ValueError(
+            "Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols)
+        )
+
     return patient_data[model_columns]
 
 
@@ -822,11 +842,15 @@ def show_main_app():
 
         with col1:
             st.markdown("### Patient Summary")
-            summary_df = pd.DataFrame({"Feature": patient_data.columns, "Value": patient_data.iloc[0].values})
+            summary_df = pd.DataFrame({
+                "Feature": patient_data.columns,
+                "Value": patient_data.iloc[0].values,
+            })
             st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
         with col2:
             st.markdown("### Prediction Result")
+
             m1, m2, m3 = st.columns(3)
             with m1:
                 st.metric("Survival Probability", f"{survival_probability:.1%}")
@@ -846,7 +870,8 @@ def show_main_app():
             if role == "doctor":
                 st.info(
                     "For clinicians: class interpretation is based on target coding "
-                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`.")
+                    "`0 = alive`, `1 = dead`, and displayed survival is computed as `1 - P(dead)`."
+                )
 
     with tabs[1]:
         st.markdown("### Role-Based Explanation")
@@ -891,6 +916,7 @@ def show_main_app():
                 "Use this result as an aid for attention and monitoring priorities, not as a replacement "
                 "for physician judgment."
             )
+
         else:
             st.markdown("### How to Read This Result")
             st.write(
