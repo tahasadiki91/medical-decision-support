@@ -92,4 +92,3 @@ Compatibility factors: HLA Match (or HLAgrI), Gender Match, CMV Status
 Transplant characteristics: Stem Cell Source, CD34kgx10⁶
 
 These variables represent biologically meaningful factors that can influence transplantation outcomes, making them appropriate inputs for our survival prediction model.
-
