@@ -15,9 +15,9 @@ This project is fully reproducible. To run the application locally, follow these
    ```bash
    streamlit run app/app.py
 
-## Critical Analysis & Findings
+## Critical Analysis & Findings:
 
-  ##   Handling Class Imbalance
+  ##   1.   Handling Class Imbalance
 The dataset is moderately imbalanced (about 60% survival vs 40% non-survival). Instead of generating synthetic data with SMOTE or dropping data via undersampling, we decided to use class-weight adjustment.
 By penalizing the model more heavily for misclassifying the minority class, we kept the original dataset intact. This approach gave us a solid balance between precision and recall, which is crucial for medical predictions where missing a high-risk case is problematic.
 
