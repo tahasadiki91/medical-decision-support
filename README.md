@@ -70,7 +70,7 @@ These results make clinical sense, as they are all standard risk factors and com
 Prompt engineering was useful for debugging technical issues and accelerating data preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve the handling of missing values and formatting issues. For example, iterative prompting was used to fix a matrix dimensionality error in the SHAP library caused by a recent update to TreeExplainer. It was also used to generate a data parser using scipy.io to decode the raw .arff dataset and automatically clean missing values (NaNs), preventing the SVM model from crashing during the pipeline execution.
 
 
-## DATA ANALYSIS :Feature Analysis and Selection for Survival Prediction
+## 5. DATA ANALYSIS :Feature Analysis and Selection for Survival Prediction
    
 We initially started with 36 features describing donor and recipient characteristics, the transplant procedure, and post-transplant clinical outcomes. To build a robust predictive model, our goal was to maximize performance while actively eliminating noise, redundancy, and information leakage.
 Here is the step-by-step preprocessing strategy we applied:
@@ -85,7 +85,7 @@ ABO compatibility: ABOmatch is completely derived from DonorABO and RecipientABO
 5.	Reducing Highly Correlated Biological Data Certain variables measured very similar immunological characteristics. For example, the dose of CD34+ cells ( CD34kgx10d6 ), the dose of CD3+ cells ( CD3dkgx10d8 ), and their ratio ( CD3dCD34 ) were highly correlated. To avoid redundancy, we retained CD34kgx10d6 as our primary representative feature.
 
 
-## 5. Correlation Analysis
+## 6. Correlation Analysis
 
 We computed a correlation matrix on the numerical features to identify redundancy before model training.
 
