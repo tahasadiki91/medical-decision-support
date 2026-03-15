@@ -81,12 +81,10 @@ except Exception as e:
 # CSS / STYLING
 # =========================================================
 def load_css():
-    # Load external CSS first if it exists
     if CSS_PATH.exists():
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-    # Force a readable medical theme on top
     st.markdown(
         """
         <style>
@@ -165,37 +163,63 @@ def load_css():
             color: #102a43 !important;
         }
 
-        /* Select boxes */
+        /* Closed select boxes */
         div[data-baseweb="select"] > div {
-            background: #f7fbff !important;
-            color: #102a43 !important;
-            border: 1px solid #9fbcd3 !important;
+            background: #111827 !important;
+            color: #ffffff !important;
+            border: 1px solid #374151 !important;
             border-radius: 12px !important;
             min-height: 46px !important;
             box-shadow: none !important;
         }
 
+        div[data-baseweb="select"] * {
+            color: #ffffff !important;
+        }
+
         div[data-baseweb="select"] input {
-            color: #102a43 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
 
         div[data-baseweb="select"] svg {
-            fill: #2f6f9f !important;
+            fill: #ffffff !important;
+        }
+
+        /* Open dropdown menu */
+        div[data-baseweb="popover"] {
+            color: #ffffff !important;
         }
 
         ul[role="listbox"] {
-            background: #f7fbff !important;
-            border: 1px solid #b7cede !important;
+            background: #0b1220 !important;
+            border: 1px solid #374151 !important;
             border-radius: 12px !important;
+            color: #ffffff !important;
         }
 
-        ul[role="listbox"] li {
-            color: #102a43 !important;
-            background: #f7fbff !important;
+        ul[role="listbox"] li,
+        div[role="option"] {
+            background: #0b1220 !important;
+            color: #ffffff !important;
         }
 
-        ul[role="listbox"] li:hover {
-            background: #e7f1f8 !important;
+        ul[role="listbox"] li *,
+        div[role="option"] * {
+            color: #ffffff !important;
+        }
+
+        ul[role="listbox"] li:hover,
+        div[role="option"]:hover {
+            background: #1f2937 !important;
+            color: #ffffff !important;
+        }
+
+        ul[role="listbox"] li[aria-selected="true"],
+        div[role="option"][aria-selected="true"] {
+            background: #374151 !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
         }
 
         /* Number inputs */
@@ -279,7 +303,7 @@ def load_css():
             padding: 0.6rem !important;
         }
 
-        /* Code / json / pre */
+        /* Code blocks */
         pre, code, .stCodeBlock, [data-testid="stCodeBlock"] {
             background: #f7fbff !important;
             color: #102a43 !important;
@@ -349,11 +373,11 @@ set_background_from_asset()
 def classify_survival_risk(survival_probability: float) -> str:
     if survival_probability >= 0.80:
         return "Very Low Risk"
-    elif survival_probability >= 0.65:
+    if survival_probability >= 0.65:
         return "Lower Risk"
-    elif survival_probability >= 0.45:
+    if survival_probability >= 0.45:
         return "Intermediate Risk"
-    elif survival_probability >= 0.25:
+    if survival_probability >= 0.25:
         return "Concerning Risk"
     return "High Risk"
 
@@ -361,11 +385,11 @@ def classify_survival_risk(survival_probability: float) -> str:
 def risk_color(survival_probability: float) -> str:
     if survival_probability >= 0.80:
         return "#1b9e77"
-    elif survival_probability >= 0.65:
+    if survival_probability >= 0.65:
         return "#4daf4a"
-    elif survival_probability >= 0.45:
+    if survival_probability >= 0.45:
         return "#ffb000"
-    elif survival_probability >= 0.25:
+    if survival_probability >= 0.25:
         return "#ff7f0e"
     return "#d62728"
 
@@ -464,7 +488,6 @@ def get_shap_values(model, patient_data):
             engineered = patient_data
 
         transformed = preprocessor.transform(engineered)
-
         explainer = shap.TreeExplainer(classifier)
         shap_vals = explainer.shap_values(transformed)
 
@@ -478,7 +501,6 @@ def get_shap_values(model, patient_data):
             patient_shap = np.array(shap_vals)[0]
 
         return np.array(patient_shap)
-
     except Exception:
         return None
 
@@ -515,55 +537,15 @@ def plot_shap_bar(top_effects):
 # =========================================================
 # INPUT MAPPINGS
 # =========================================================
-recipient_gender_map = {
-    "Female": "0",
-    "Male": "1",
-}
-
-stemcell_source_map = {
-    "Bone Marrow": "0",
-    "Peripheral Blood": "1",
-}
-
-gender_match_map = {
-    "Other": "0",
-    "Female to Male": "1",
-}
-
-abo_map = {
-    "O": "0",
-    "A": "1",
-    "B": "-1",
-    "AB": "2",
-}
-
-recipient_rh_map = {
-    "Negative": "0",
-    "Positive": "1",
-}
-
-cmv_binary_map = {
-    "Absent": "0",
-    "Present": "1",
-}
-
-risk_group_map = {
-    "Low Risk": "0",
-    "High Risk": "1",
-}
-
-disease_group_map = {
-    "Non-malignant": "0",
-    "Malignant": "1",
-}
-
-hla_match_map = {
-    "10/10": "0",
-    "9/10": "1",
-    "8/10": "2",
-    "7/10": "3",
-}
-
+recipient_gender_map = {"Female": "0", "Male": "1"}
+stemcell_source_map = {"Bone Marrow": "0", "Peripheral Blood": "1"}
+gender_match_map = {"Other": "0", "Female to Male": "1"}
+abo_map = {"O": "0", "A": "1", "B": "-1", "AB": "2"}
+recipient_rh_map = {"Negative": "0", "Positive": "1"}
+cmv_binary_map = {"Absent": "0", "Present": "1"}
+risk_group_map = {"Low Risk": "0", "High Risk": "1"}
+disease_group_map = {"Non-malignant": "0", "Malignant": "1"}
+hla_match_map = {"10/10": "0", "9/10": "1", "8/10": "2", "7/10": "3"}
 hla_group_map = {
     "HLA matched": "0",
     "One antigen difference": "1",
@@ -574,7 +556,6 @@ hla_group_map = {
 }
 
 disease_options = ["ALL", "AML", "chronic", "nonmalignant", "lymphoma"]
-
 cmvstatus_options = [
     "Donor-/Recipient-",
     "Donor-/Recipient+",
@@ -649,11 +630,7 @@ def show_auth_screen():
             unsafe_allow_html=True,
         )
 
-    mode = st.radio(
-        "Choose access mode",
-        ["Login", "Create Account"],
-        horizontal=True,
-    )
+    mode = st.radio("Choose access mode", ["Login", "Create Account"], horizontal=True)
 
     if mode == "Login":
         st.subheader("Login")
@@ -671,7 +648,6 @@ def show_auth_screen():
                 st.rerun()
             else:
                 st.error("Invalid email or password.")
-
     else:
         st.subheader("Create Account")
 
@@ -762,8 +738,7 @@ def build_patient_dataframe(inputs: dict) -> pd.DataFrame:
     missing_cols = [col for col in model_columns if col not in patient_data.columns]
     if missing_cols:
         raise ValueError(
-            "Model/interface mismatch. Missing columns required by model: "
-            + ", ".join(missing_cols)
+            "Model/interface mismatch. Missing columns required by model: " + ", ".join(missing_cols)
         )
 
     return patient_data[model_columns]
