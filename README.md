@@ -77,4 +77,8 @@ Here is the step-by-step preprocessing strategy we applied:
 1.	Preventing Data Leakage (Post-Transplant Variables) We strictly removed all variables that recorded events occurring after the transplant (e.g., acute GvHD, survival time). Keeping them would introduce severe data leakage, allowing the model to "cheat" by looking at future outcomes rather than predicting from pre-transplant conditions.
 2.	Removing Redundant Variables Several features described the exact same biological information but in different formats. Keeping them all would introduce multicollinearity.
  	Age variables: We had continuous age ( Donorage , Recipientage ) and binned thresholds ( Donorage35 , Recipientage10 , Recipientageint ). We kept the continuous variables because they contain the most precise detail, and we dropped the derived categorical ones.
+3.	Removing Derived Compatibility Variables Some compatibility indicators were mathematically derived from other existing columns:
+ABO compatibility: ABOmatch is completely derived from DonorABO and RecipientABO .
+ 	HLA compatibility: We had multiple features representing the same immunological mismatch ( HLAmatch , HLAmismatch , Antigen , Allele , HLAgrI ). We selected one detailed representation for HLA and dropped the rest to stabilize the model.
+4.	Handling Missing Values Several variables contained missing data (e.g., RecipientABO , CMVstatus , CD3dCD34 ). We evaluated the proportion of missing values for each: features with an overwhelmingly high percentage of missing data were dropped because they were unreliable. For the remaining features, we imputed the missing values so we wouldn't have to discard valuable patient records.
 
