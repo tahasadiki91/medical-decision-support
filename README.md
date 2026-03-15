@@ -10,7 +10,7 @@ This project is fully reproducible. To run the application locally, follow these
    pip install -r requirements.txt
 2. **Train the machine learning model:**
    ```bash
-   python src/train_model.py
+   python -m src.train_model
 3. **Launch the Streamlit web application:**
    ```bash
    streamlit run app/app.py
