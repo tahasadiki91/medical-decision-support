@@ -232,7 +232,7 @@ pip install -r requirements.txt
 
 ### 2. Train the model
 ```bash
-python src/train_model.py
+python -m src.train_model
 ```
 
 ### 3. Run the app
