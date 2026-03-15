@@ -67,7 +67,7 @@ These results make clinical sense, as they are all standard risk factors and com
 
 ## 4.	Prompt Engineering Insights
 
-Prompt engineering was highly useful for debugging technical issues and accelerating preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve handling of missing values and formatting issues. For example, I used iterative prompting to troubleshoot a matrix dimensionality error in the shap library caused by a recent update to TreeExplainer. I also used it to quickly write a data parser using scipy.io to automatically decode the raw.arff dataset format and dynamically clean missing values (NaNs) so the SVM model wouldn't crash during pipeline execution.
+Prompt engineering was useful for debugging technical issues and accelerating data preprocessing and implementation. It helped resolve SHAP compatibility problems, generate code to parse the ARFF dataset, and improve the handling of missing values and formatting issues. For example, iterative prompting was used to fix a matrix dimensionality error in the SHAP library caused by a recent update to TreeExplainer. It was also used to generate a data parser using scipy.io to decode the raw .arff dataset and automatically clean missing values (NaNs), preventing the SVM model from crashing during the pipeline execution.
 
 
 ## DATA ANALYSIS :Feature Analysis and Selection for Survival Prediction
