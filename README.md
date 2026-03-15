@@ -8,7 +8,7 @@ A decision-support application developed to assist physicians in predicting the 
 
 > **Goal:** predict pediatric bone marrow transplant survival using an explainable ML pipeline.
 >
-> **Best model:** **XGBoost**
+> **Best model:** **Random Forest**
 >
 > **Main strengths:** class-imbalance handling, SHAP interpretability, reproducible workflow, physician-oriented interface.
 
@@ -16,7 +16,7 @@ A decision-support application developed to assist physicians in predicting the 
 flowchart LR
     A[Dataset] --> B[Preprocessing]
     B --> C[Model Comparison]
-    C --> D[XGBoost Final Model]
+    C --> D[Random Forest Final Model]
     D --> E[SHAP Explanation]
     E --> F[Streamlit App]
 ```
@@ -49,6 +49,30 @@ Our target variable is **`survival_status`**.
 
 ---
 
+## Task Management (Trello)
+
+To manage team coordination and track the project workflow, we used Trello as recommended in the project brief.
+
+**Trello board:** [Health Project Board](https://trello.com/invite/b/69aecd8a77da1cab8b19330c/ATTIbeffe79b3bda32c3e5ff6dac11a00f5729779811/health)
+
+The board was used to organize and monitor tasks such as:
+- data preprocessing,
+- class imbalance handling,
+- model training and comparison,
+- SHAP integration,
+- Streamlit interface development,
+- README writing and final review.
+
+We tracked progress using a simple workflow:
+- **To Do**
+- **In Progress**
+- **Review**
+- **Done**
+
+This helped make responsibilities clear and kept the project traceable from start to finish.
+
+---
+
 ## Class Balance
 
 The dataset is **moderately imbalanced**, with about **60% survival** and **40% non-survival** cases.
@@ -72,15 +96,15 @@ This choice improved the reliability of **precision**, **recall**, **F1-score**,
 
 ## Best Model and Performance
 
-After preprocessing the data and removing leakage features, **XGBoost** achieved the best overall performance.
+After preprocessing the data and removing leakage features, **Random Forest** emerged as the best-performing model on the leakage-free dataset.
 
 ### Final Metrics
 
 | Model | Accuracy | ROC-AUC | Precision | Recall | F1-Score |
 |------|----------|---------|-----------|--------|----------|
-| **XGBoost** | **0.763** | **0.745** | **0.750** | **0.705** | **0.727** |
-| Random Forest | — | 0.732 | — | — | — |
-| SVM | — | — | — | — | — |
+| **Random Forest** | **0.947** | **0.968** | **1.000** | **0.882** | **0.938** |
+| XGBoost | 0.895 | 0.964 | 0.882 | 0.882 | 0.882 |
+| SVM | 0.526 | 0.759 | 0.455 | 0.294 | 0.357 |
 
 ### Visuals
 
@@ -88,9 +112,9 @@ After preprocessing the data and removing leakage features, **XGBoost** achieved
 
 ![ROC Curve](assets/roc_curve.png)
 
-### Why XGBoost?
+### Why Random Forest?
 
-While Random Forest builds trees independently, XGBoost builds them sequentially and learns from the errors of previous trees. This helped it capture complex clinical relationships more effectively.
+Random Forest achieved the strongest overall performance on the leakage-free dataset. It provided the best balance between discrimination ability, precision, recall, and robustness on tabular clinical data.
 
 ### Why ROC-AUC?
 
@@ -145,7 +169,7 @@ We initially started with **36 features** describing donor and recipient charact
 
 ## Correlation Analysis
 
-This is the section designed to be understood **visually first**, without needing to read long paragraphs.
+This section is designed to be understood **visually first**, especially for readers who want to grasp the preprocessing logic quickly.
 
 ### Correlation Heatmap
 
@@ -232,7 +256,7 @@ pip install -r requirements.txt
 
 ### 2. Train the model
 ```bash
-python -m src.train_model
+python src/train_model.py
 ```
 
 ### 3. Run the app
