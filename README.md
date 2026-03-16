@@ -80,6 +80,14 @@ According to the **deployed application metrics**, the final selected model load
 |------|---------------:|-------------:|----------------------:|---------------------:|
 | **XGBoost** | **0.5795** | **0.5798** | **0.5883** | **0.0442** |
 
+### Candidate Models Mentioned in the Project
+
+| Model | Status in current app README |
+|------|-------------------------------|
+| **XGBoost** | deployed and measured in the app |
+| Random Forest | candidate model, but no deployed-app metrics exported |
+| SVM | candidate model, but no deployed-app metrics exported |
+
 ### Exact Values Used by the App
 
 - **Best Model:** `xgboost`
@@ -91,7 +99,9 @@ According to the **deployed application metrics**, the final selected model load
 
 ### Important Note
 
-Earlier README drafts contained larger metrics from a different version of the workflow. To keep the documentation consistent with the **current deployed app**, this README now reports the values actually shown in the application interface.
+Earlier README drafts contained larger metrics from a different workflow version. To keep the documentation consistent with the **current deployed app**, this README reports only the values actually shown in the application interface.
+
+I did **not** add artificial improvements such as `+0.05` or `+0.06`, and I did **not** invent Random Forest or SVM scores. If you want those two models in the table, they should be recomputed from the training pipeline and then exported honestly.
 
 ### Visuals
 
